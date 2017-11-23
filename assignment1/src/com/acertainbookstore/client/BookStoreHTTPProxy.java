@@ -41,7 +41,7 @@ public class BookStoreHTTPProxy implements BookStore {
 
 	/**
 	 * Initializes a new {@link BookStoreHTTPProxy}.
-	 *
+*
 	 * @param serverAddress
 	 *            the server address
 	 * @throws Exception
