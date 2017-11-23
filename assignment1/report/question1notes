@@ -1,0 +1,17 @@
+actual idea
+---
+
+divide address space into pages
+
+page_no = addr / page_size
+offset = addr % page_size
+
+maintain a map: page_no => (machine, machine_page_addr) # frequently read, used on read and write
+                machine => list of pages # infrequently used, read on leave, updated on new page added
+
+on access to addr not yet in map: assign the page to some machine
+
+given machine and machine_page_addr: read(machine, machine_page_addr + offset)
+
+on machine leave: grab all the pages it was assigned and copy them to other machines
+on machine join: Add it to struture of machines with available memory, assign pages to it as needed
