@@ -471,7 +471,42 @@ public class BookStoreTest {
 		List<StockBook> booksInStorePostTest = storeManager.getBooks();
 		// Test that no ratings have changed
 	}
+	/**
+	 * Test that books can not be got if K is not valid.
+	 *
+	 * @throws BookStoreException
+	 *             the book store exception
+	 */
+    @Test
+    public void testValidationK() throws BookStoreException  {
+    	List<StockBook> booksInStorePreTest = storeManager.getBooks();
 
+		HashSet<BookRating> isbnList = new HashSet<>();
+		addBooks(1,3);
+		addBooks(2,3);
+		addBooks(3,3);
+		isbnList.add(new BookRating(1,1));
+		isbnList.add(new BookRating(2,2));
+		isbnList.add(new BookRating(3,3));
+		List<Book> books = client.getTopRatedBooks(2);   //valid
+		List<Book> books1 = client.getTopRatedBooks(0);  //valid
+		assertTrue(books.size()==2 && books1.size()== 0);
+		try {
+			client.getTopRatedBooks(-2);                 //invalid
+			fail(" K is negative integer");
+		} catch (BookStoreException ex) {
+			;
+		}	
+		try {
+			client.getTopRatedBooks(5);                  //invalid
+			fail("K is larger than #books");
+		} catch (BookStoreException ex) {
+			;
+		}
+		List<StockBook> booksInStorePostTest = storeManager.getBooks();
+    }
+    
+    
 	/**
 	 * validGetTopRatedBooks
 	 * Check K validation (positive, zero and negative integers)
