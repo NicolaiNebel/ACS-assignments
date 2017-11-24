@@ -357,10 +357,10 @@ public class BookStoreTest {
 		List<StockBook> booksInStorePreTest = storeManager.getBooks();
 		assertTrue(booksInStorePreTest.get(0).getISBN() == TEST_ISBN);
 
-		HashSet<BookRating> isbnList = new HashSet<>();
-		isbnList.add(new BookRating(TEST_ISBN, 5)); // Book is missing
+		HashSet<BookRating> ratingList = new HashSet<>();
+		ratingList.add(new BookRating(TEST_ISBN, 5)); // Book is missing
 
-		client.rateBooks(isbnList);
+		client.rateBooks(ratingList);
 
 		List<StockBook> books = storeManager.getBooks();
 		StockBook defaultBook = books.get(0); //Get the first and only book
@@ -380,12 +380,12 @@ public class BookStoreTest {
 		List<StockBook> booksInStorePreTest = storeManager.getBooks();
 		assertTrue(booksInStorePreTest.get(0).getISBN() == TEST_ISBN);
 
-		HashSet<BookRating> isbnList = new HashSet<>();
-		isbnList.add(new BookRating(TEST_ISBN, 3)); // Book is missing
+		HashSet<BookRating> ratingList = new HashSet<>();
+		ratingList.add(new BookRating(TEST_ISBN, 3)); // Book is missing
 
-		client.rateBooks(isbnList);
-		client.rateBooks(isbnList);
-		client.rateBooks(isbnList);
+		client.rateBooks(ratingList);
+		client.rateBooks(ratingList);
+		client.rateBooks(ratingList);
 
 		List<StockBook> books = storeManager.getBooks();
 		StockBook defaultBook = books.get(0); //Get the first and only book
@@ -405,12 +405,12 @@ public class BookStoreTest {
 		List<StockBook> booksInStorePreTest = storeManager.getBooks();
 
 		// Make an invalid ISBN.
-		HashSet<BookRating> isbnList = new HashSet<>();
-		isbnList.add(new BookRating(TEST_ISBN, 3)); // valid
-		isbnList.add(new BookRating(-1, 5)); // invalid
+		HashSet<BookRating> ratingList = new HashSet<>();
+		ratingList.add(new BookRating(TEST_ISBN, 3)); // valid
+		ratingList.add(new BookRating(-1, 5)); // invalid
 
 		try {
-			client.rateBooks(isbnList);
+			client.rateBooks(ratingList);
 			fail("rateBooks does not fail on invalid ISBN rating");
 		} catch (BookStoreException ex) {
 			;
@@ -433,12 +433,12 @@ public class BookStoreTest {
 		List<StockBook> booksInStorePreTest = storeManager.getBooks();
 
 		// Make an invalid ISBN.
-		HashSet<BookRating> isbnList = new HashSet<>();
-		isbnList.add(new BookRating(TEST_ISBN, 3)); // valid
-		isbnList.add(new BookRating(TEST_ISBN+1, 6)); // invalid
+		HashSet<BookRating> ratingList = new HashSet<>();
+		ratingList.add(new BookRating(TEST_ISBN, 3)); // valid
+		ratingList.add(new BookRating(TEST_ISBN+1, 6)); // invalid
 
 		try {
-			client.rateBooks(isbnList);
+			client.rateBooks(ratingList);
 			fail("rateBooks does not fail on invalid rating");
 		} catch (BookStoreException ex) {
 			;
@@ -458,11 +458,11 @@ public class BookStoreTest {
 	public void testRateMissingBook() throws BookStoreException {
 		List<StockBook> booksInStorePreTest = storeManager.getBooks();
 
-		HashSet<BookRating> isbnList = new HashSet<>();
-		isbnList.add(new BookRating(TEST_ISBN+1, 3)); // Book is missing
+		HashSet<BookRating> ratingList = new HashSet<>();
+		ratingList.add(new BookRating(TEST_ISBN+1, 3)); // Book is missing
 
 		try {
-			client.rateBooks(isbnList);
+			client.rateBooks(ratingList);
 			fail("rateBooks does not fail on missing book");
 		} catch (BookStoreException ex) {
 			;
