@@ -2,9 +2,12 @@ package com.acertainbookstore.business;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -362,7 +365,54 @@ public class CertainBookStore implements BookStore, StockManager {
 	 */
 	@Override
 	public synchronized List<Book> getTopRatedBooks(int numBooks) throws BookStoreException {
-		throw new BookStoreException();
+		if (numBooks < 0) {
+			throw new BookStoreException("numBooks = " + numBooks + ", but it must be positive");
+		}
+		
+		//List<BookStoreBook> listSortedRatedBooks = new ArrayList<>();
+		List<Book> listTopRatedBooks = new ArrayList<>();
+		Iterator<Entry<Integer, BookStoreBook>> it = bookMap.entrySet().iterator();
+	    List<Entry<Integer, BookStoreBook>> listSortedRatedBooks = new LinkedList(bookMap.entrySet());
+	    Entry<Integer, BookStoreBook> book;
+	    
+	  // Sort all books that are rated
+	    Collections.sort(listSortedRatedBooks,new Comparator<Entry<Integer, BookStoreBook>>(){
+	    	public int compare(Entry<Integer, BookStoreBook> o1, Entry<Integer, BookStoreBook> o2){
+	    		String so1 = Long.toString(o1.getValue().getTotalRating());
+	    		String so2 = Long.toString(o2.getValue().getTotalRating());
+	    		return so1.compareTo(so2);
+	    	}
+	    });
+	    		
+		// Find numBooks random indices of books that will be picked.
+				Random rand = new Random();
+				Set<Integer> tobePicked = new HashSet<>();
+				int rangePicks = listSortedRatedBooks.size();
+
+				if (rangePicks <= numBooks) {
+
+					// We need to add all books.
+					for (int i = 0; i < listSortedRatedBooks.size(); i++) {
+						tobePicked.add(i);
+					}
+				} else {
+
+					// We need to pick top k rated books that need to be returned.
+					int indexNum = 0;
+
+					while (tobePicked.size() < numBooks) {
+						indexNum++;
+						tobePicked.add(indexNum);
+					}
+				}
+
+				// Get the numBooks random books.
+				for (Integer index : tobePicked) {
+					book = listSortedRatedBooks.get(index);
+					listTopRatedBooks.add(book.getValue().immutableBook());
+				}
+
+				return listTopRatedBooks;
 	}
 
 	/*
@@ -372,7 +422,16 @@ public class CertainBookStore implements BookStore, StockManager {
 	 */
 	@Override
 	public synchronized List<StockBook> getBooksInDemand() throws BookStoreException {
-		throw new BookStoreException();
+		
+		List<StockBook> listBooks = new ArrayList<>();
+		Collection<BookStoreBook> bookMapValues = bookMap.values();
+        
+		for (BookStoreBook book : bookMapValues) {
+//			if (book.getNumCopies() == 0)
+				listBooks.add(book.immutableStockBook());
+		}
+
+		return listBooks;
 	}
 
 	/*
@@ -382,7 +441,37 @@ public class CertainBookStore implements BookStore, StockManager {
 	 */
 	@Override
 	public synchronized void rateBooks(Set<BookRating> bookRating) throws BookStoreException {
-		throw new BookStoreException();
+		if (bookRating == null) {
+			throw new BookStoreException(BookStoreConstants.NULL_INPUT);
+		}
+
+		// Check that all ISBNs that we rate are there first.
+		int isbn;
+		int ratings;
+		BookStoreBook book;
+
+		for (BookRating bookToRate : bookRating) {
+			isbn = bookToRate.getISBN();
+			ratings = bookToRate.getRating();
+
+			if (BookStoreUtility.isInvalidISBN(isbn)) {
+				throw new BookStoreException(BookStoreConstants.ISBN + isbn + BookStoreConstants.INVALID);
+			}
+
+			if (!bookMap.containsKey(isbn)) {
+				throw new BookStoreException(BookStoreConstants.ISBN + isbn + BookStoreConstants.NOT_AVAILABLE);
+			}
+			if (BookStoreUtility.isInvalidNoCopies(ratings)) {
+				throw new BookStoreException(BookStoreConstants.NUM_COPIES + ratings + BookStoreConstants.INVALID);
+			}
+		}
+		
+		//update the number of the rate
+		for (BookRating bookToRate : bookRating) {
+			book = bookMap.get(bookToRate.getISBN());
+			book.addRating(bookToRate.getRating());
+		}
+		
 	}
 
 	/*
