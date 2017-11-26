@@ -45,6 +45,9 @@ public final class BookStoreConstants {
 	/** The Constant ISBN. */
 	public static final String ISBN = "The ISBN: ";
 
+	/** The Constant Score. */
+	public static final String SCORE = "The score: ";
+
 	/** The Constant NUM_COPIES. */
 	public static final String NUM_COPIES = "The Number of copies: ";
 
