@@ -489,6 +489,8 @@ public class BookStoreTest {
 		List<Book> books = client.getTopRatedBooks(2);   //valid
 		List<Book> books1 = client.getTopRatedBooks(0);  //valid
 		List<Book> books2 = client.getTopRatedBooks(5);  //valid
+		List<Book> books3 = client.getTopRatedBooks(1);  //valid
+//		assertTrue(books[0].getISBN() == 3);
 		assertTrue(books.size()==2 && books1.size()== 0&&books2.size() == 4);
 		try {
 			client.getTopRatedBooks(-2);                 //invalid

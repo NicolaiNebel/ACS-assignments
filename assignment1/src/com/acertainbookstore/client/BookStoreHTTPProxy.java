@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Set;
+
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
@@ -157,7 +158,9 @@ public class BookStoreHTTPProxy implements BookStore {
 	 */
 	@Override
 	public void rateBooks(Set<BookRating> bookRating) throws BookStoreException {
-		throw new BookStoreException();
+		String urlString = serverAddress + "/" + BookStoreMessageTag.RATEBOOKS;
+		BookStoreRequest bookStoreRequest = BookStoreRequest.newPostRequest(urlString, bookRating);
+		BookStoreUtility.performHttpExchange(client, bookStoreRequest, serializer.get());
 	}
 
 	/*
@@ -165,8 +168,23 @@ public class BookStoreHTTPProxy implements BookStore {
 	 * 
 	 * @see com.acertainbookstore.interfaces.BookStore#getTopRatedBooks(int)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public List<Book> getTopRatedBooks(int numBooks) throws BookStoreException {
-		throw new BookStoreException();
+		String urlEncodedNumBooks = null;
+
+		try {
+			urlEncodedNumBooks = URLEncoder.encode(Integer.toString(numBooks), "UTF-8");
+		} catch (UnsupportedEncodingException ex) {
+			throw new BookStoreException("unsupported encoding of numbooks", ex);
+		}
+
+		String urlString = serverAddress + "/" + BookStoreMessageTag.GETTOPRATEDBOOKS + "?"
+				+ BookStoreConstants.BOOK_NUM_PARAM + "=" + urlEncodedNumBooks;
+
+		BookStoreRequest bookStoreRequest = BookStoreRequest.newGetRequest(urlString);
+		BookStoreResponse bookStoreResponse = BookStoreUtility.performHttpExchange(client, bookStoreRequest,
+				serializer.get());
+		return (List<Book>) bookStoreResponse.getList();
 	}
 }
