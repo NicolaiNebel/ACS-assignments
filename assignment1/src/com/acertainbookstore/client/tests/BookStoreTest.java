@@ -34,7 +34,7 @@ public class BookStoreTest {
 	private static final int NUM_COPIES = 5;
 
 	/** The local test. */
-	private static boolean localTest = true;
+	private static boolean localTest = false;
 
 	/** The store manager. */
 	private static StockManager storeManager;
@@ -346,8 +346,7 @@ public class BookStoreTest {
 	}
 
 	/**
-	 * Tests that different valid inputs to rateBooks does not throw exceptions
-	 * and updates state correctly.
+	 * Tests that a single valid rating is processed correctly.
      *
 	 * @throws BookStoreException
 	 *             the book store exception
@@ -380,12 +379,18 @@ public class BookStoreTest {
 		List<StockBook> booksInStorePreTest = storeManager.getBooks();
 		assertTrue(booksInStorePreTest.get(0).getISBN() == TEST_ISBN);
 
-		HashSet<BookRating> ratingList = new HashSet<>();
-		ratingList.add(new BookRating(TEST_ISBN, 3)); // Book is missing
+		HashSet<BookRating> ratingList1 = new HashSet<>();
+		ratingList1.add(new BookRating(TEST_ISBN, 3)); // Book is missing
 
-		client.rateBooks(ratingList);
-		client.rateBooks(ratingList);
-		client.rateBooks(ratingList);
+		HashSet<BookRating> ratingList2 = new HashSet<>();
+		ratingList2.add(new BookRating(TEST_ISBN, 2)); // Book is missing
+
+		HashSet<BookRating> ratingList3 = new HashSet<>();
+		ratingList3.add(new BookRating(TEST_ISBN, 4)); // Book is missing
+
+		client.rateBooks(ratingList1);
+		client.rateBooks(ratingList2);
+		client.rateBooks(ratingList3);
 
 		List<StockBook> books = storeManager.getBooks();
 		StockBook defaultBook = books.get(0); //Get the first and only book

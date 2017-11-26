@@ -382,7 +382,37 @@ public class CertainBookStore implements BookStore, StockManager {
 	 */
 	@Override
 	public synchronized void rateBooks(Set<BookRating> bookRating) throws BookStoreException {
-		throw new BookStoreException();
+		if (bookRating == null)
+			throw new BookStoreException(BookStoreConstants.NULL_INPUT);
+
+		//Check that all the books in the rating are there
+		//and that all the ratings are legal
+
+		int isbn;
+
+		for (BookRating rating : bookRating) {
+			isbn = rating.getISBN();
+
+			if (BookStoreUtility.isInvalidISBN(isbn)) {
+				throw new BookStoreException(BookStoreConstants.ISBN + isbn + BookStoreConstants.INVALID);
+			}
+
+			if (!bookMap.containsKey(isbn)) {
+				throw new BookStoreException(BookStoreConstants.ISBN + isbn + BookStoreConstants.NOT_AVAILABLE);
+			}
+
+			int score = rating.getRating();
+			if (score < 0 || score > 5) {
+				throw new BookStoreException(BookStoreConstants.SCORE + score + BookStoreConstants.INVALID);
+			}
+		}
+
+		// We first check that all the books exist, so we don't do
+		// a partial rating by accident
+		for (BookRating rating : bookRating ) {
+            BookStoreBook book = bookMap.get(rating.getISBN());
+			book.addRating(rating.getRating());
+		}
 	}
 
 	/*
