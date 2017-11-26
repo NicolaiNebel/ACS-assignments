@@ -357,14 +357,12 @@ public class BookStoreTest {
 		List<StockBook> booksInStorePreTest = storeManager.getBooks();
 		assertTrue(booksInStorePreTest.get(0).getISBN() == TEST_ISBN);
 
-		HashSet<BookRating> ratingList = new HashSet<>();
+		Set<BookRating> ratingList = new HashSet<>();
 		ratingList.add(new BookRating(TEST_ISBN, 5)); // Book is missing
 
 		client.rateBooks(ratingList);
-
 		List<StockBook> books = storeManager.getBooks();
 		StockBook defaultBook = books.get(0); //Get the first and only book
-
 		assertTrue(defaultBook.getTotalRating() == 5
 				&& defaultBook.getNumTimesRated() == 1);
     }
@@ -490,40 +488,17 @@ public class BookStoreTest {
 		isbnList.add(new BookRating(3,3));
 		List<Book> books = client.getTopRatedBooks(2);   //valid
 		List<Book> books1 = client.getTopRatedBooks(0);  //valid
-		assertTrue(books.size()==2 && books1.size()== 0);
+		List<Book> books2 = client.getTopRatedBooks(5);  //valid
+		assertTrue(books.size()==2 && books1.size()== 0&&books2.size() == 4);
 		try {
 			client.getTopRatedBooks(-2);                 //invalid
 			fail(" K is negative integer");
 		} catch (BookStoreException ex) {
 			;
 		}	
-		try {
-			client.getTopRatedBooks(5);                  //invalid
-			fail("K is larger than #books");
-		} catch (BookStoreException ex) {
-			;
-		}
 		List<StockBook> booksInStorePostTest = storeManager.getBooks();
     }
-    /**
-	 * Test that books in demand can be retrieved.
-	 *
-	 * @throws BookStoreException
-	 *             the book store exception
-	 */
-    @Test
-    public void testGetBooksIndemand() throws BookStoreException  {
-    	Set<StockBook> booksToAdd = new HashSet<StockBook>();
-		booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 1, "The Art of Computer Programming", "Donald Knuth",
-				(float) 300, NUM_COPIES, 0, 0, 0, false));
-		booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 2, "The C Programming Language",
-				"Dennis Ritchie and Brian Kerninghan", (float) 50, 0, 0, 0, 0, false));
-
-		storeManager.addBooks(booksToAdd);
-		
-		List<StockBook> books = storeManager.getBooksInDemand();  
-		assertTrue(books.size() == 1);
-    }
+   
     
 	/**
 	 * validGetTopRatedBooks

@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -369,30 +368,42 @@ public class CertainBookStore implements BookStore, StockManager {
 			throw new BookStoreException("numBooks = " + numBooks + ", but it must be positive");
 		}
 		
-		//List<BookStoreBook> listSortedRatedBooks = new ArrayList<>();
+		List<BookStoreBook> listSortedRatedBooks = new ArrayList<>();
 		List<Book> listTopRatedBooks = new ArrayList<>();
 		Iterator<Entry<Integer, BookStoreBook>> it = bookMap.entrySet().iterator();
-	    List<Entry<Integer, BookStoreBook>> listSortedRatedBooks = new LinkedList(bookMap.entrySet());
-	    Entry<Integer, BookStoreBook> book;
+	    BookStoreBook book;
 	    
-	  // Sort all books that are rated
-	    Collections.sort(listSortedRatedBooks,new Comparator<Entry<Integer, BookStoreBook>>(){
-	    	public int compare(Entry<Integer, BookStoreBook> o1, Entry<Integer, BookStoreBook> o2){
-	    		String so1 = Long.toString(o1.getValue().getTotalRating());
-	    		String so2 = Long.toString(o2.getValue().getTotalRating());
-	    		return so1.compareTo(so2);
+	    //Get all books
+	    while (it.hasNext()) {
+			Entry<Integer, BookStoreBook> pair = it.next();
+			book = pair.getValue();
+			listSortedRatedBooks.add(book);
+		}
+	    
+    	// Sort all books that are rated
+	    Collections.sort(listSortedRatedBooks,new Comparator <BookStoreBook>(){
+	    	public int compare( BookStoreBook b1,BookStoreBook b2){
+	    		float AverageRate1 = b1.getAverageRating();
+	    		float AverageRate2 = b2.getAverageRating();
+	    		if (AverageRate1 < AverageRate2 )
+	    			return 1;
+	    		else{
+	    			if (AverageRate1 == AverageRate2 )
+	    				return 0;
+	    			else 
+	    				return -1;
+	    		}
 	    	}
 	    });
 	    		
-		// Find numBooks random indices of books that will be picked.
-				Random rand = new Random();
+		// Find numBooks descending indices of books that will be picked.
 				Set<Integer> tobePicked = new HashSet<>();
 				int rangePicks = listSortedRatedBooks.size();
 
 				if (rangePicks <= numBooks) {
 
 					// We need to add all books.
-					for (int i = 0; i < listSortedRatedBooks.size(); i++) {
+					for (int i = 0; i < rangePicks; i++) {
 						tobePicked.add(i);
 					}
 				} else {
@@ -406,10 +417,10 @@ public class CertainBookStore implements BookStore, StockManager {
 					}
 				}
 
-				// Get the numBooks random books.
+				// Get the numBooks books.
 				for (Integer index : tobePicked) {
 					book = listSortedRatedBooks.get(index);
-					listTopRatedBooks.add(book.getValue().immutableBook());
+					listTopRatedBooks.add(book.immutableBook());
 				}
 
 				return listTopRatedBooks;
@@ -427,7 +438,7 @@ public class CertainBookStore implements BookStore, StockManager {
 		Collection<BookStoreBook> bookMapValues = bookMap.values();
         
 		for (BookStoreBook book : bookMapValues) {
-//			if (book.getNumCopies() == 0)
+			if (book.hadSaleMiss() == true)
 				listBooks.add(book.immutableStockBook());
 		}
 
@@ -461,12 +472,19 @@ public class CertainBookStore implements BookStore, StockManager {
 			if (!bookMap.containsKey(isbn)) {
 				throw new BookStoreException(BookStoreConstants.ISBN + isbn + BookStoreConstants.NOT_AVAILABLE);
 			}
-			if (BookStoreUtility.isInvalidNoCopies(ratings)) {
-				throw new BookStoreException(BookStoreConstants.NUM_COPIES + ratings + BookStoreConstants.INVALID);
+			if (BookStoreUtility.isInvalidRating(ratings)) {
+				throw new BookStoreException(BookStoreConstants.RATING + ratings + BookStoreConstants.INVALID);
+			}
+			
+			book = bookMap.get(isbn);
+
+			if (book.hadSaleMiss() == true) {
+				// If the book is not in the collection it will throw a exception.
+				throw new BookStoreException(BookStoreConstants.BOOK + BookStoreConstants.NOT_AVAILABLE);
 			}
 		}
 		
-		//update the number of the rate
+		//update the sum of ratings and the number of ratings
 		for (BookRating bookToRate : bookRating) {
 			book = bookMap.get(bookToRate.getISBN());
 			book.addRating(bookToRate.getRating());
