@@ -1,0 +1,87 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[head=26pt, a4paper, margin=1.2in, top=1.4in, bottom=1.75in]{geometry}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[hidelinks, colorlinks, urlcolor=blue, linkcolor=black,citecolor=magenta]
+{hyperref}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{mathtools}
+
+% ---------------- Page and margin/header/footer Setup -----------------
+\pagestyle{fancy}
+%\fancyhf{} % Clears header and footer
+\fancyhead{}
+\fancyfoot{}
+\lhead{ACS --- Assignment 1}
+\rhead{DIKU}
+\lfoot{Page \thepage\ of \pageref{LastPage}}
+\rfoot{Yiran Zhang\\Nicolai Jørgensen}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+% ----------------------------------------------------------------------
+
+\newtheorem{mythm}{Theorem}
+\newtheorem{mydef}{Definition}
+
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\title          {Assignment 1}
+\author         {Yiran Zhang and Nicolai Jørgensen}
+
+\begin{document}
+
+\maketitle
+\newpage
+
+\section{Question 1}
+
+In order to organise memory with physical storage on several machines, we are
+going to split the top-level memory into pages. Additionally, we will maintain a
+map between the top-level pages and a tuple of machine identifier and local
+address. The mapping can be implemented to run in $O(log n)$ time, with $n$ being the
+number of allocated pages, which can be kept small by choosing suitably large
+page sizes.
+
+In addition, we will for each machine maintain a list of its pages and the
+number of pages it has allocated. The length of the list can be used to load
+balance the system, by evenly splitting the memory between available machines.
+When a machine leaves the system, all of its pages can be copied to prevent data
+loss.
+
+In the pseudocode below, we assume calls to address directly into the big
+contiguous memory space. That is, there is no virtual memory addressing going
+on.
+\begin{Verbatim}
+READ(addr):
+  (PageNo, Offset) = (addr / page_size, addr % page_size)
+  if (exists(page_map, PageNo)):
+    (Machine, MachineAddr) = lookup(page_map, PageNo)
+    return RemoteREAD(Machine, MachineAddr + Offset)
+  else:
+    return segfault
+
+WRITE(addr, value):
+  (PageNo, Offset) <- (addr / page_size, addr % page_size)
+  if (exists(page_map, PageNo)):
+    (Machine, MachineAddr) = lookup(page_map, PageNo)
+    return RemoteWRITE(Machine, MachineAddr + Offset, value)
+  else:
+    if system has space for a new page:
+      (Machine, MachineAddr) = allocate_new_page(PageNo),
+      add(page_map, PageNo, (Machine, MachineAddr))
+      return RemoteWRITE(Machine, MachineAddr + Offset, value)
+    else:
+      return segfault
+\end{Verbatim}
+\end{document}
