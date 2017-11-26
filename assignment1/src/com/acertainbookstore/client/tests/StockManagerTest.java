@@ -474,6 +474,26 @@ public class StockManagerTest {
 		booksInStoreList = storeManager.getBooks();
 		assertTrue(booksInStoreList.size() == 0);
 	}
+	
+	 /**
+		 * Test that books in demand can be retrieved.
+		 *
+		 * @throws BookStoreException
+		 *             the book store exception
+		 */
+	    @Test
+	    public void testGetBooksIndemand() throws BookStoreException  {
+	    	Set<StockBook> booksToAdd = new HashSet<StockBook>();
+			booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 1, "The Art of Computer Programming", "Donald Knuth",
+					(float) 300, NUM_COPIES, 0, 0, 0, false));
+			booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 2, "The C Programming Language",
+					"Dennis Ritchie and Brian Kerninghan", (float) 50,NUM_COPIES, 2, 0, 0, false));
+
+			storeManager.addBooks(booksToAdd);
+			
+			List<StockBook> books = storeManager.getBooksInDemand();  
+			assertTrue( books.size() == 1 );
+	    }
 
 	/**
 	 * Tear down after class.
