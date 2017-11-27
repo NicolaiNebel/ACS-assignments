@@ -74,7 +74,8 @@ READ(addr):
     (Machine, MachineAddr) = lookup(page_map, PageNo)
     v = RemoteREAD(Machine, MachineAddr + Offset)
     if      v == segfault: return segfault
-    else if v == timeout:  try again a set number of times, if still no success, return timeout
+    else if v == timeout:  try again a set number of times,
+                             if still no success, return timeout
     else:                  return v
   else:
     return segfault
