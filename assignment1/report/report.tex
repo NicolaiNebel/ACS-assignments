@@ -229,7 +229,8 @@ to these addresses faster, thus optimizing the common case.
         retrieved.
     \end{itemize}
   \item
-    \begin{itemize}
+
+\begin{itemize}
       \item[a)]
 				The architecture is modular in the sense that there is a clear
         seperation between client code, server code and the communication layer
@@ -282,9 +283,16 @@ to these addresses faster, thus optimizing the common case.
     for non-critical requests. For example, buying books from a web proxy when
     the main service is down would not be ideal.
   \item
+   \begin{itemize}
+      \item[a)]
     Yes there is scalability bottlenecks in this architecture with respect to the
     number of clients. A large number of clients could easily overload our
-    single backend server.
+    single backend server. 
+      \item[b)]
+     Bottlenecks happens when client and service are communicating, especially 
+     when the service is computing the requests,due to request-computing part 
+     should not be difficult, we would give priority on communication link.
+     \end{itemize}    
   \item
     Yes, the use of proxies between clients and the server would change the ways
     clients might experience failures.
