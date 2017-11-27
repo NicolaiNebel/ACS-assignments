@@ -207,95 +207,106 @@ to these addresses faster, thus optimizing the common case.
 \begin{enumerate}
   \item
     \begin{itemize}
-      \item[a)] when the implementation and tests succeeds it will return a result otherwise it will throw an exception
-      \item[b)]
-        For the \texttt{rateBooks} we write the following tests: test that a
-        single valid rating is processed correctly, test that multiple ratings
-        accumulate on a book, test test books cannot be rated if ISBN is
-        invalid, test that books cannot be rated if a rating is invalid,test
-        that trying to rate a book not in the score causes an error.
+      \item[a)]
+        All-or-nothing semantics means that if a transaction fails at any
+        point, no part of the transaction data is saved. For example, in
+				\verb|TestRateInvalidISBN()|, we test that an illegal rating and a
+				valid rating together makes no change to state.
 
-        For the \texttt{getTopRatedBooks} we write the following tests: test
-        that books can not be got if K is not valid, tests that a valid K can
+      \item[b)]
+        For the \texttt{rateBooks} we write the following tests: that a
+        single valid rating is processed correctly, that multiple ratings
+        accumulate on a book, that books cannot be rated if ISBN is
+        invalid, that books cannot be rated if a rating is invalid and
+        that trying to rate a book not in the store causes an error.
+
+        For the \texttt{getTopRatedBooks} we write the following tests:
+        that books can not be got if K is not valid and that a valid K can
         be processed correctly.
 
-        For the \texttt{getBooksIndemand} we tests that books in demand can be
-        retrived.
+        For the \texttt{getBooksIndemand} we test that books in demand can be
+        retrieved.
     \end{itemize}
   \item
     \begin{itemize}
       \item[a)]
-        In this architecture the customer sole is strongly modular. The
-        \texttt{StockManager} and \texttt{BookStore} are complete separation.And they
-        both have separate \texttt{HTTPProxies}. 
-
-        And all the functions corresponding to the two customer role can be called
-        separately.
+				The architecture is modular in the sense that there is a clear
+        seperation between client code, server code and the communication layer
+        between them. Each of these modules can be upgraded or completely
+        replaced without the rest of the program needing changes.
 
       \item[b)]
-        The isolation is fact that the bookstore implementation and our clients have to
-        exchange communication through a distinct layer, and we use RPCs to ask a
-        server for the actual computation stuff
-
-        The protection is fact that the architecture has strong modularity which means
-        it has low coupling. When one modular fails, the system can run as well
+        The architecture isolates the clients from the backend code by way of
+        an intervening communication layer. Thus, clients and service can only
+        speak to each other through RPCs.
+        
+        For all intents and purposes have seperate state and environment. This
+        is provided by the strong modularity. For example, the service could
+        fail and the clients would still run and preserve their own state.
 
       \item[c)]
-        The same kind of isolation is not enforced. Once the JVM breaks down,both the
-        server and the clients will crash, as possible through the test
+        The same kind of isolation is not enforced. Once the JVM breaks down,
+        both the server and the clients will crash, as can be done in the tests.
+
     \end{itemize}
   \item
     \begin{itemize}
       \item[a)]
         Yes, there is naming system, it binds the names with the address or
         resource.  By specifying the name  we can get the resource, the service
-        address and the provider information. Therefore users can interact with a
-        computer through names.
+        address and the provider information. Therefore, clients can interact with a
+        service through names.
 
       \item[b)]
         We use IP address to allows the clients to discover and communicate with
-        servers
+        servers.
     \end{itemize}
   \item
     At-most-once semantics is implemented in the architecture. Using at-most-once
-    the RPCs will either return a calling result or throw an exception. In out
+    the RPCs will either return a result or some error. In our
     implementation, when the RPC succeeds it will return the result, otherwise it
+    will throw an exception. The implementation of the backend logic ensures
+    that no state changes happens when a call fails.
   \item
-    \begin{itemize}
-      \item[a)]
-        Yes it is safe to use web proxy servers with the architecture of Figure 2
-      \item[b)]
-        Because it encrypt the communication to and from the clients. And the proxies
-        should be deployed between the software proxies and the server where it uses
-        the HTTP requests and responses throws an exception and fails.
-    \end{itemize}
-  \item
-    \begin{itemize}
-      \item[a)]
-        Yes there is scalability bottlenecks in this architecture with respect to the
-        number of clients
-      \item[b)]
-        CPU, the RAM and the hard disk.
-    \end{itemize}
-  \item
-    \begin{itemize}
-      \item[a)]
-        No.\ when no cache is employed in the web proxy,the clients experience failures
-        similar if web proxies were used in the architecture.
+    Yes, it is safe to use web proxy servers. We can encrypt the
+    communication between the proxy server and the clients and service to
+    protect against man-in-the-middle attacks. 
 
-        Because the web proxies cannot store the data in cache, when the sever crash
-        the web proxies cannot fetch the data from the remote sever and cannot return
-        corresponding reply. Therefore the clients can experience the similar failure
-      \item[b)]
-        Yes, because web proxies store the web pages and some files in cache so when
-        the sever crash, the web proxies can return the some datas in the cache to the
-        clients
-      \item[c)]
-        When using at-most-once semantics, if it fails, the RPCs returns results or
-        throws exception and the web proxies stores the results or exceptions.
-        Therefore in the next the time, if the clients send the same request, the web
-        proxies will directly return the results or exceptions.
-    \end{itemize}
+    The proxies should be deployed between the software proxies that handle
+    message sending and the server that receives and handles the HTTP requests.
+    Notice on the diagram that these are exactly the messages sent using HTTP.
+    These messages are the boundary between the clients and the service.
+
+    As a conservative measure, the proxy servers should probably only be used
+    for non-critical requests. For example, buying books from a web proxy when
+    the main service is down would not be ideal.
+  \item
+    Yes there is scalability bottlenecks in this architecture with respect to the
+    number of clients. A large number of clients could easily overload our
+    single backend server.
+  \item
+    Yes, the use of proxies between clients and the server would change the ways
+    clients might experience failures.
+    
+    First of all, there might be difference in the time where clients are
+    notified about the crash, because of e.g different processing
+    times/communication times.
+
+    If the web proxies not only did forwarding and communication handling but
+    also caching, then errors might be effectively masked. In case of RPCs that
+    merely retrieve data, the proxies could simply serve their cached state to
+    the clients.
+
+    In case of RPCs with consequences, such as rating books, the proxies could
+    store requests in a queue to be processed when the service comes back
+    online. This is of course only a good idea for some systems, specifically
+    where the service can be quickly restarted. The clients should obviously
+    somehow be informed about this.
+
+    Other than that, using caching in web proxies would mean that the clients
+    lose the guarantee that the data they are retrieving is the actual service
+    state. They might be served old data and the requests they send might be
+    delayed.
 \end{enumerate}
 
 \end{document}

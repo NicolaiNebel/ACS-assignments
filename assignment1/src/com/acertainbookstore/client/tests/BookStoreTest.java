@@ -419,8 +419,11 @@ public class BookStoreTest {
 			;
 		}
 
-		List<StockBook> booksInStorePostTest = storeManager.getBooks();
+		List<StockBook> books = storeManager.getBooks();
+		StockBook defaultBook = books.get(0); //Get the first and only book
 		// Test that no ratings have changed
+		assertTrue(defaultBook.getNumTimesRated() == 0 &&
+			defaultBook.getTotalRating() == 0);
 	}
 
 	/**
