@@ -67,7 +67,10 @@ READ(addr):
   (PageNo, Offset) = (addr / page_size, addr % page_size)
   if (exists(page_map, PageNo)):
     (Machine, MachineAddr) = lookup(page_map, PageNo)
-    return RemoteREAD(Machine, MachineAddr + Offset)
+    v = RemoteREAD(Machine, MachineAddr + Offset)
+    if      v == segfault: return segfault
+    else if v == timeout:  try again a set number of times, if still no success, return timeout
+    else:                  return v
   else:
     return segfault
 
@@ -80,8 +83,63 @@ WRITE(addr, value):
     if system has space for a new page:
       (Machine, MachineAddr) = allocate_new_page(PageNo),
       add(page_map, PageNo, (Machine, MachineAddr))
-      return RemoteWRITE(Machine, MachineAddr + Offset, value)
+      RemoteWRITE(Machine, MachineAddr + Offset, value)
     else:
       return segfault
+
+RemoteREAD(Machine, Addr):
+  Ask Machine to READ(Addr)
+  Wait for response:
+    On return:   return value
+    On segfault: return segfault
+  On timeout:  return timeout
+
+RemoteWRITE(Machine, Addr, Value):
+  Ask Machine to WRITE(Addr, Value)
+
+allocate_new_page(PageNo):
+  find machine with least pages (O(logn))
+  try to allocate page:
+  on fail:
+    remove machine from list of available machines for allocation
+    allocate_new_page(PageNo)
+  on success:
+    return (machine, allocated page addr)
+
 \end{Verbatim}
+The page numbers and offsets are calculated using simple integer division and
+modulo. The functions \verb|lookup|, \verb|get| and \verb|add| refer to a map
+structure with $O(logn)$ running times implemented with e.g a binary search
+tree.\\
+
+We believe that memory access against the unified memory space need not
+necessarily be atomic. However, memory access to addresses in individual
+machines still need to preserve this basic integrity. That is, we should be able
+to distribute the memory access computation between machines.\\
+
+Our name mapping strategy makes an assumption about the system setup.
+We assume that we know the addresses, and thus also the quantity, of machines in
+the unified memory space. Then, we use that information to dynamically spread
+allocated pages over the machines.
+
+Our system also allows for dynamic leaves and joins of machines in the memory
+space. Joining is simple, we just inform the system that a new machine is
+available with no pages allocated yet. Leaving is a bit more complicated, but
+can be done by iterating over the pages it had allocated. Each page should be
+allocated on and copied unto another machine. The leave operation should inform
+the system if some data could not be copied.
+
+\section{Question 2}
+
+
+
+
+Caching is indeed an example of a fast path optimization. Fast path optimization
+refers to designing system to make it fast in the common case. The concept of
+"locality of reference" occurs almost naturally when designing programs.
+We are specifically referring to temporal and spatial locality, which means that
+if one memory address is accessed, it and its neighbours are more likely to be
+accessed in the near future. Caching the entire page of an address makes lookups
+to these addresses faster, thus optimizing the common case.
+
 \end{document}
