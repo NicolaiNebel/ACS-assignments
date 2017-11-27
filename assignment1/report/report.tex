@@ -133,6 +133,7 @@ allocate_new_page(PageNo):
     can be done by iterating over the pages it had allocated. Each page should be
     allocated on and copied unto another machine. The leave operation should inform
     the system if some data could not be copied.
+\end{enumerate}
 
 \section{Question 2}
 
@@ -192,8 +193,6 @@ allocate_new_page(PageNo):
 \end{enumerate}
 
 
-
-<<<<<<< HEAD
 Caching is indeed an example of a fast path optimization. Fast path optimization
 refers to designing system to make it fast in the common case. The concept of
 "locality of reference" occurs almost naturally when designing programs.
@@ -255,7 +254,7 @@ CPU, the RAM and the hard disk.
 
 \section{}
 \subsection{}
-No. when no cache is employed in the web proxy,the clients experience failures similar if web proxies were used in the architecture.
+No.\ when no cache is employed in the web proxy,the clients experience failures similar if web proxies were used in the architecture.
 
 Because the web proxies cannot store the data in cache, when the sever crash the web proxies cannot fetch the data from the remote sever and cannot return corresponding reply. Therefore the clients can experience the similar failure
 \subsection{}
@@ -264,6 +263,4 @@ Yes, because web proxies store the web pages and some files in cache so when the
 \subsection{}
 When using at-most-once semantics, if it fails, the RPCs returns results or throws exception and the web proxies stores the results or exceptions. Therefore in the next the time, if the clients send the same request, the web proxies will directly return the results or exceptions.
 
-=======
->>>>>>> 2951a5dde256b5b02317c8ef2971eb134924aec6
 \end{document}
