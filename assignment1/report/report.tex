@@ -283,16 +283,16 @@ to these addresses faster, thus optimizing the common case.
     for non-critical requests. For example, buying books from a web proxy when
     the main service is down would not be ideal.
   \item
-   \begin{itemize}
-      \item[a)]
     Yes there is scalability bottlenecks in this architecture with respect to the
-    number of clients. A large number of clients could easily overload our
-    single backend server. 
-      \item[b)]
-     Bottlenecks happens when client and service are communicating, especially 
-     when the service is computing the requests,due to request-computing part 
-     should not be difficult, we would give priority on communication link.
-     \end{itemize}    
+    number of clients. A large number of clients could overload the single
+    backend server. We will have to rethink our implementation of the
+    backend logic, if the number of requests grow to a large number.
+
+    Technically, there could be a performance bottleneck on the server. If
+    the requests take long to process and they arrive at a rapid rate the
+    service might simply run out of computing power. However, as it stands
+    right now, the computation is exceedingly simple and we would be better
+    off focusing on the communication links.
   \item
     Yes, the use of proxies between clients and the server would change the ways
     clients might experience failures.
