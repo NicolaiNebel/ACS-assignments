@@ -14,6 +14,7 @@
 \usepackage{float}
 \usepackage{listings}
 \usepackage{mathtools}
+\usepackage{enumitem}
 
 % ---------------- Page and margin/header/footer Setup -----------------
 \pagestyle{fancy}
@@ -66,7 +67,7 @@
     In the pseudocode below, we assume calls to address directly into the big
     contiguous memory space. That is, there is no virtual memory addressing going
     on.
-\begin{Verbatim}
+\begin{verbatim}
 READ(addr):
   (PageNo, Offset) = (addr / page_size, addr % page_size)
   if (exists(page_map, PageNo)):
@@ -109,7 +110,7 @@ allocate_new_page(PageNo):
   on success:
     return (machine, allocated page addr)
 
-\end{Verbatim}
+\end{verbatim}
     The page numbers and offsets are calculated using simple integer division and
     modulo. The functions \verb|lookup|, \verb|get| and \verb|add| refer to a map
     structure with $O(logn)$ running times implemented with e.g a binary search
@@ -202,65 +203,99 @@ accessed in the near future. Caching the entire page of an address makes lookups
 to these addresses faster, thus optimizing the common case.
 
 \section{Questions for Discussion on Architecture}
-\subsection{}
-when the implementation and tests succeeds it will return a result otherwise it will throw an exception
 
-\subsection{}
-For the \texttt{rateBooks} we write the following tests: test that a single valid rating is processed correctly, test that multiple ratings accumulate on a book, test test books cannot be rated if ISBN is invalid, test that books cannot be rated if a rating is invalid,test that trying to rate a book not in the score causes an error.
+\begin{enumerate}
+  \item
+    \begin{itemize}
+      \item[a)] when the implementation and tests succeeds it will return a result otherwise it will throw an exception
+      \item[b)]
+        For the \texttt{rateBooks} we write the following tests: test that a
+        single valid rating is processed correctly, test that multiple ratings
+        accumulate on a book, test test books cannot be rated if ISBN is
+        invalid, test that books cannot be rated if a rating is invalid,test
+        that trying to rate a book not in the score causes an error.
 
-For the \texttt{getTopRatedBooks} we write the following tests: test that books can not be got if K is not valid, tests that a valid K can be processed correctly.
+        For the \texttt{getTopRatedBooks} we write the following tests: test
+        that books can not be got if K is not valid, tests that a valid K can
+        be processed correctly.
 
-For the \texttt{getBooksIndemand} we tests that books in demand can be retrived.
+        For the \texttt{getBooksIndemand} we tests that books in demand can be
+        retrived.
+    \end{itemize}
+  \item
+    \begin{itemize}
+      \item[a)]
+        In this architecture the customer sole is strongly modular. The
+        \texttt{StockManager} and \texttt{BookStore} are complete separation.And they
+        both have separate \texttt{HTTPProxies}. 
 
-\section{}
-\subsection{}
-In this architecture the customer sole is strongly modular. The \texttt{StockManager} and \texttt{BookStore} are complete separation.And they both have separate \texttt{HTTPProxies}. 
+        And all the functions corresponding to the two customer role can be called
+        separately.
 
-And all the functions corresponding to the two customer role can be called separately.
+      \item[b)]
+        The isolation is fact that the bookstore implementation and our clients have to
+        exchange communication through a distinct layer, and we use RPCs to ask a
+        server for the actual computation stuff
 
+        The protection is fact that the architecture has strong modularity which means
+        it has low coupling. When one modular fails, the system can run as well
 
-\subsection{}
-The isolation is fact that the bookstore implementation and our clients have to exchange communication through a distinct layer, and we use RPCs to ask a server for the actual computation stuff
+      \item[c)]
+        The same kind of isolation is not enforced. Once the JVM breaks down,both the
+        server and the clients will crash, as possible through the test
+    \end{itemize}
+  \item
+    \begin{itemize}
+      \item[a)]
+        Yes, there is naming system, it binds the names with the address or
+        resource.  By specifying the name  we can get the resource, the service
+        address and the provider information. Therefore users can interact with a
+        computer through names.
 
-The protection is fact that the architecture has strong modularity which means it has low coupling. When one modular fails, the system can run as well
+      \item[b)]
+        We use IP address to allows the clients to discover and communicate with
+        servers
+    \end{itemize}
+  \item
+    At-most-once semantics is implemented in the architecture. Using at-most-once
+    the RPCs will either return a calling result or throw an exception. In out
+    implementation, when the RPC succeeds it will return the result, otherwise it
+  \item
+    \begin{itemize}
+      \item[a)]
+        Yes it is safe to use web proxy servers with the architecture of Figure 2
+      \item[b)]
+        Because it encrypt the communication to and from the clients. And the proxies
+        should be deployed between the software proxies and the server where it uses
+        the HTTP requests and responses throws an exception and fails.
+    \end{itemize}
+  \item
+    \begin{itemize}
+      \item[a)]
+        Yes there is scalability bottlenecks in this architecture with respect to the
+        number of clients
+      \item[b)]
+        CPU, the RAM and the hard disk.
+    \end{itemize}
+  \item
+    \begin{itemize}
+      \item[a)]
+        No.\ when no cache is employed in the web proxy,the clients experience failures
+        similar if web proxies were used in the architecture.
 
-\subsection{}
-The same kind of isolation is not enforced. Once the JVM breaks down,both the server and the clients will crash, as possible through the test
-
-
-\section{}
-\subsection{}
-Yes, there is naming system, it binds the names with the address or resource. By specifying the name  we can get the resource, the service address and the provider information. Therefore users can interact with a computer through names.
-
-\subsection{}
-We use IP address to allows the clients to discover and communicate with servers
-
-\section{}
-
-At-most-once semantics is implemented in the architecture. Using at-most-once the RPCs will either return a calling result or throw an exception. In out implementation, when the RPC succeeds it will return the result, otherwise it throws an exception and fails.
-
-\section{}
-\subsection{}
-Yes it is safe to use web proxy servers with the architecture of Figure 2
-
-\subsection{}
-Because it encrypt the communication to and from the clients. And the proxies should be deployed between the software proxies and the server where it uses the HTTP requests and responses
-
-\section{}
-\subsection{}
-Yes there is scalability bottlenecks in this architecture with respect to the number of clients
-\subsection{}
-CPU, the RAM and the hard disk.
-
-\section{}
-\subsection{}
-No.\ when no cache is employed in the web proxy,the clients experience failures similar if web proxies were used in the architecture.
-
-Because the web proxies cannot store the data in cache, when the sever crash the web proxies cannot fetch the data from the remote sever and cannot return corresponding reply. Therefore the clients can experience the similar failure
-\subsection{}
-Yes, because web proxies store the web pages and some files in cache so when the sever crash, the web proxies can return the some datas in the cache to the clients
-
-\subsection{}
-When using at-most-once semantics, if it fails, the RPCs returns results or throws exception and the web proxies stores the results or exceptions. Therefore in the next the time, if the clients send the same request, the web proxies will directly return the results or exceptions.
+        Because the web proxies cannot store the data in cache, when the sever crash
+        the web proxies cannot fetch the data from the remote sever and cannot return
+        corresponding reply. Therefore the clients can experience the similar failure
+      \item[b)]
+        Yes, because web proxies store the web pages and some files in cache so when
+        the sever crash, the web proxies can return the some datas in the cache to the
+        clients
+      \item[c)]
+        When using at-most-once semantics, if it fails, the RPCs returns results or
+        throws exception and the web proxies stores the results or exceptions.
+        Therefore in the next the time, if the clients send the same request, the web
+        proxies will directly return the results or exceptions.
+    \end{itemize}
+\end{enumerate}
 
 \end{document}
