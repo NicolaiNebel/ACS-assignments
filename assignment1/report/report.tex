@@ -290,8 +290,10 @@ to these addresses faster, thus optimizing the common case.
     single backend server. 
       \item[b)]
      Bottlenecks happens when client and service are communicating, especially 
-     when the service is computing the requests,due to request-computing part 
-     should not be difficult, we would give priority on communication link.
+     when the service is computing the requests, due to request-computing part 
+     should not be difficult, we would give priority on communication link since
+     a bad communication link would influence the running of the whole system and 
+     too many requets may crash the communication link.
      \end{itemize}    
   \item
     Yes, the use of proxies between clients and the server would change the ways
