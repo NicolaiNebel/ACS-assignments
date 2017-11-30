@@ -368,7 +368,7 @@ public class CertainBookStore implements BookStore, StockManager {
 			throw new BookStoreException("numBooks = " + numBooks + ", but it must be positive");
 		}
 		
-		List<BookStoreBook> listSortedRatedBooks = new ArrayList<>();
+		List<BookStoreBook> listSortedRatedBooks = new ArrayList<BookStoreBook>();
 		List<Book> listTopRatedBooks = new ArrayList<>();
 		Iterator<Entry<Integer, BookStoreBook>> it = bookMap.entrySet().iterator();
 	    BookStoreBook book;
@@ -383,16 +383,19 @@ public class CertainBookStore implements BookStore, StockManager {
     	// Sort all books that are rated
 	    Collections.sort(listSortedRatedBooks,new Comparator <BookStoreBook>(){
 	    	public int compare( BookStoreBook b1,BookStoreBook b2){
-	    		float AverageRate1 = b1.getAverageRating();
-	    		float AverageRate2 = b2.getAverageRating();
-	    		if (AverageRate1 < AverageRate2 )
+	    		float averageRate1 = b1.getAverageRating();
+	    		float averageRate2 = b2.getAverageRating();
+//	    		String averageRate1 = Float.toString(b1.getAverageRating());
+//	    		String averageRate2 = Float.toString(b2.getAverageRating());
+	    		if (averageRate1 < averageRate2 )
 	    			return 1;
 	    		else{
-	    			if (AverageRate1 == AverageRate2 )
+	    			if (averageRate1 == averageRate2 )
 	    				return 0;
 	    			else 
 	    				return -1;
 	    		}
+//	    		return -(averageRate1.compareTo(averageRate2));
 	    	}
 	    });
 	    		

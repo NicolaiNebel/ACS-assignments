@@ -40,7 +40,7 @@ public class StockManagerTest {
 	private static final Integer NUM_COPIES = 5;
 
 	/** The local test. */
-	private static boolean localTest = true;
+	private static boolean localTest = false;
 
 	/** The store manager. */
 	private static StockManager storeManager;
@@ -482,17 +482,37 @@ public class StockManagerTest {
 		 *             the book store exception
 		 */
 	    @Test
-	    public void testGetBooksIndemand() throws BookStoreException  {
+	    public void testMoreThenOneBooksIndemand() throws BookStoreException  {
 	    	Set<StockBook> booksToAdd = new HashSet<StockBook>();
 			booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 1, "The Art of Computer Programming", "Donald Knuth",
-					(float) 300, NUM_COPIES, 0, 0, 0, false));
+					(float) 300, NUM_COPIES, 1, 0, 0, false));
 			booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 2, "The C Programming Language",
 					"Dennis Ritchie and Brian Kerninghan", (float) 50,NUM_COPIES, 2, 0, 0, false));
 
 			storeManager.addBooks(booksToAdd);
 			
 			List<StockBook> books = storeManager.getBooksInDemand();  
-			assertTrue( books.size() == 1 );
+			assertTrue( books.size() == 2 );
+	    }
+	    
+	    /**
+		 * Test that books in demand can be retrieved.
+		 *
+		 * @throws BookStoreException
+		 *             the book store exception
+		 */
+	    @Test
+	    public void testNoBookIndemand() throws BookStoreException  {
+	    	Set<StockBook> booksToAdd = new HashSet<StockBook>();
+			booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 1, "The Art of Computer Programming", "Donald Knuth",
+					(float) 300, NUM_COPIES, 0, 0, 0, false));
+			booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 2, "The C Programming Language",
+					"Dennis Ritchie and Brian Kerninghan", (float) 50,NUM_COPIES, 0, 0, 0, false));
+
+			storeManager.addBooks(booksToAdd);
+			
+			List<StockBook> books = storeManager.getBooksInDemand();  
+			assertTrue( books.size() == 0 );
 	    }
 
 	/**

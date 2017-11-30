@@ -140,16 +140,6 @@ public class BookStoreHTTPProxy implements BookStore {
 		return (List<Book>) bookStoreResponse.getList();
 	}
 
-	/**
-	 * Stops the proxy.
-	 */
-	public void stop() {
-		try {
-			client.stop();
-		} catch (Exception ex) {
-			System.err.println(ex.getStackTrace());
-		}
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -187,4 +177,16 @@ public class BookStoreHTTPProxy implements BookStore {
 				serializer.get());
 		return (List<Book>) bookStoreResponse.getList();
 	}
+	
+	/**
+	 * Stops the proxy.
+	 */
+	public void stop() {
+		try {
+			client.stop();
+		} catch (Exception ex) {
+			System.err.println(ex.getStackTrace());
+		}
+	}
+
 }
