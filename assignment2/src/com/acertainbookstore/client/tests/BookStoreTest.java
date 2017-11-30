@@ -363,6 +363,18 @@ public class BookStoreTest {
 				&& booksInStorePreTest.size() == booksInStorePostTest.size());
 	}
 
+  public void testBuyAndAddConcurrent() throws BookStoreException {
+    Thread C1 = new Thread(() -> {
+      System.out.println("Hello from a thread!");
+    });
+    C1.start();
+
+    Thread C2 = new Thread(() -> {
+      System.out.println("Hello from another thread!");
+    });
+    C2.start();
+  }
+
 	/**
 	 * Tear down after class.
 	 *
