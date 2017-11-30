@@ -2,6 +2,7 @@ package com.acertainbookstore.client.tests;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -363,17 +364,127 @@ public class BookStoreTest {
 				&& booksInStorePreTest.size() == booksInStorePostTest.size());
 	}
 
-  public void testBuyAndAddConcurrent() throws BookStoreException {
-    Thread C1 = new Thread(() -> {
-      System.out.println("Hello from a thread!");
-    });
-    C1.start();
+	/**
+	 * Tests that concurrently adding copies and buying books maintain consistent state
+	 *
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testBuyAndAddConcurrent() throws BookStoreException {
+	 	int ITERATIONS = 10000;
 
-    Thread C2 = new Thread(() -> {
-      System.out.println("Hello from another thread!");
-    });
-    C2.start();
-  }
+		Set<BookCopy> copiesToAdd = new HashSet<>();
+
+		BookCopy book = new BookCopy(TEST_ISBN, ITERATIONS);
+		copiesToAdd.add(book);
+		storeManager.addCopies(copiesToAdd);
+		HashSet<BookCopy> oneBook = new HashSet<>(Arrays.asList(new BookCopy(TEST_ISBN, 1)));
+
+        Thread C1 = new Thread(() -> {
+            try {
+                for(int i = 0; i < ITERATIONS; i++) {
+                    client.buyBooks(oneBook);
+                }
+            } catch (BookStoreException ex) {
+            	;
+			}
+        });
+        C1.start();
+
+        Thread C2 = new Thread(() -> {
+			try {
+				for(int i = 0; i < ITERATIONS; i++) {
+					storeManager.addCopies(oneBook);
+				}
+			} catch (BookStoreException ex) {
+				;
+			}
+        });
+        C2.start();
+
+        try {
+			C1.join();
+			C2.join();
+		} catch (InterruptedException ex) {
+        	fail();
+		}
+
+		List<StockBook> booksInStore = storeManager.getBooks();
+        StockBook defaultBook = booksInStore.get(0);
+		assertTrue(defaultBook.getNumCopies() == ITERATIONS);
+	}
+
+	/**
+	 * Tests that addCopies and buyBooks respect before-and-after semantics.
+	 * That is, it is not possible to see a state where a call to addCopies or buyBooks is half-finished.
+	 *
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testBuyAndAddConsistency() throws BookStoreException {
+		int ITERATIONS = 10000;
+		int INITIAL_COPIES = 10;
+
+		// Adding some books to the store
+		Set<StockBook> booksToAdd = new HashSet<StockBook>();
+		StockBook book1 = new ImmutableStockBook(1, "Book1", "George RR Testin'", (float) 10, INITIAL_COPIES, 0, 0,
+				0, false);
+		StockBook book2 = new ImmutableStockBook(2, "Book2", "Ernest Testingway", (float) 10, INITIAL_COPIES, 0, 0,
+				0, false);
+		StockBook book3 = new ImmutableStockBook(3, "Book3", "Ursula K. Le Test", (float) 10, INITIAL_COPIES, 0, 0,
+				0, false);
+		booksToAdd.add(book1); booksToAdd.add(book2); booksToAdd.add(book3);
+		storeManager.addBooks(booksToAdd);
+
+		// The set of books to buy and add
+		Set<BookCopy> bookSet = new HashSet<>();
+		BookCopy copy1 = new BookCopy(1,1);
+		BookCopy copy2 = new BookCopy(2,2);
+		BookCopy copy3 = new BookCopy(3,3);
+		bookSet.add(copy1); bookSet.add(copy2); bookSet.add(copy3);
+
+		Thread C1 = new Thread(() -> {
+			try {
+				for(int i = 0; i < ITERATIONS; i++) {
+					client.buyBooks(bookSet);
+
+					storeManager.addCopies(bookSet);
+				}
+			} catch (BookStoreException ex) {}
+		});
+		C1.start();
+
+		HashSet<Integer> isbnSet = new HashSet<>();
+		isbnSet.add(1); isbnSet.add(2); isbnSet.add(3);
+
+		Thread C2 = new Thread(() -> {
+			try {
+				for(int i = 0; i < ITERATIONS; i++) {
+					List<StockBook> booksInStock = storeManager.getBooksByISBN(isbnSet);
+					for (StockBook book : booksInStock) {
+						for (BookCopy buyCopy : bookSet) {
+							if (book.getISBN() == buyCopy.getISBN()) {
+								int copies = book.getNumCopies();
+								assertTrue(copies == INITIAL_COPIES
+										|| copies == INITIAL_COPIES - buyCopy.getNumCopies());
+								break;
+							}
+						}
+					}
+				}
+			} catch (BookStoreException ex) {}
+		});
+		C2.start();
+
+		try {
+			C1.join();
+			C2.join();
+		} catch (InterruptedException ex) {
+			fail();
+		}
+
+	}
+
 
 	/**
 	 * Tear down after class.
