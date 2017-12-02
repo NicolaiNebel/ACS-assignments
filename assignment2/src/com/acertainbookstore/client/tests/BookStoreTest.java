@@ -372,7 +372,7 @@ public class BookStoreTest {
 	 */
 	@Test
 	public void testBuyAndAddConcurrent() throws BookStoreException {
-	 	int ITERATIONS = 10000;
+	 	int ITERATIONS = 100000;
 
 		Set<BookCopy> copiesToAdd = new HashSet<>();
 
@@ -423,7 +423,7 @@ public class BookStoreTest {
 	 */
 	@Test
 	public void testBuyAndAddConsistency() throws BookStoreException {
-		int ITERATIONS = 10000;
+		int ITERATIONS = 100000;
 		int INITIAL_COPIES = 10;
 
 		// Adding some books to the store
@@ -494,7 +494,7 @@ public class BookStoreTest {
 	 */
 	@Test
 	public void testAddAndRemoveConcurrent() {
-		int ITERATIONS = 10000;
+		int ITERATIONS = 100000;
 		int INITIAL_COPIES = 10;
 		Set<StockBook> booktoAdd = new HashSet<StockBook>();
 		HashSet<Integer> isbnSet = new HashSet<Integer>();
@@ -543,8 +543,8 @@ public class BookStoreTest {
 	 */
 	
 	@Test
-	public void testUpdateEditorPicks() throws BookStoreException {
-		int ITERATIONS = 1000;
+	public void testUpdateEditorPicks() throws BookStoreException, InterruptedException {
+		int ITERATIONS = 100000;
 		int NUMBER_OF_BOOKS = 1000;
 
 		//Add books to the store
@@ -575,48 +575,33 @@ public class BookStoreTest {
 			try {
 				for (int i = 0; i < ITERATIONS; i++){
 					storeManager.updateEditorPicks(bookToTrue);
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
 				}
 			} catch (BookStoreException ex) {
 				ex.printStackTrace();
 			}
 		});
-		C1.start();
-		
+
 		Thread C2 = new Thread(()-> {
 			for (int i = 0; i < ITERATIONS; i++) {
 				try {
 					storeManager.updateEditorPicks(bookToFalse);
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		});
+
+		C1.start();
 		C2.start();
 
 		for (int i = 0; i < ITERATIONS; i++) {
-			List<StockBook> booksInStore = storeManager.getBooks();
-			int picks = booksInStore.size();
-			System.out.println(client.getEditorPicks(picks).size());
-			assertTrue(client.getEditorPicks(picks).size() == NUMBER_OF_BOOKS
-					|| client.getEditorPicks(picks).size() == 0);
+			int numberOfPicks = client.getEditorPicks(NUMBER_OF_BOOKS).size();
+			assertTrue(numberOfPicks == NUMBER_OF_BOOKS
+					|| numberOfPicks == 0);
 		}
 
-		try {
-			C1.join();
-			C2.join();
-		} catch (InterruptedException ex) {
-        	fail();
-		}
+        C1.join();
+        C2.join();
 	}
 	
 	/**

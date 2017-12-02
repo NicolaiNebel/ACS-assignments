@@ -36,10 +36,11 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 	public SingleLockConcurrentCertainBookStore() {
 		// Constructors are not synchronized
 		bookMap = new HashMap<>();
+		readWriteLock = new ReentrantReadWriteLock();
 	}
 
 	//Global lock for the bookstore state
-	private ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+	private ReadWriteLock readWriteLock;
 
 	private void takeReadLock() { readWriteLock.readLock().lock(); }
 	private void releaseReadLock() { readWriteLock.readLock().unlock(); }
