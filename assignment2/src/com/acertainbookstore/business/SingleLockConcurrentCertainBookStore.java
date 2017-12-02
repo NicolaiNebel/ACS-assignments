@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.*;
 
 import com.acertainbookstore.interfaces.BookStore;
 import com.acertainbookstore.interfaces.StockManager;
@@ -35,7 +37,9 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 		// Constructors are not synchronized
 		bookMap = new HashMap<>();
 	}
-
+    
+	ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -93,6 +97,9 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 	 * com.acertainbookstore.interfaces.StockManager#addCopies(java.util.Set)
 	 */
 	public void addCopies(Set<BookCopy> bookCopiesSet) throws BookStoreException {
+		
+		
+		
 		int isbn;
 		int numCopies;
 
@@ -116,16 +123,22 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 				throw new BookStoreException(BookStoreConstants.NUM_COPIES + numCopies + BookStoreConstants.INVALID);
 			}
 		}
-
+		
 		BookStoreBook book;
-
+		readWriteLock.writeLock().lock();
 		// Update the number of copies
-		for (BookCopy bookCopy : bookCopiesSet) {
-			isbn = bookCopy.getISBN();
-			numCopies = bookCopy.getNumCopies();
-			book = bookMap.get(isbn);
-			book.addCopies(numCopies);
+		try{
+			for (BookCopy bookCopy : bookCopiesSet) {
+				isbn = bookCopy.getISBN();
+				numCopies = bookCopy.getNumCopies();
+				book = bookMap.get(isbn);
+				book.addCopies(numCopies);
+		    }
+		}finally{
+			readWriteLock.writeLock().unlock();
 		}
+	
+
 	}
 
 	/*
@@ -190,6 +203,8 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 		int isbn;
 		BookStoreBook book;
 		Boolean saleMiss = false;
+		
+		
 
 		Map<Integer, Integer> salesMisses = new HashMap<>();
 
@@ -227,12 +242,18 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 			}
 			throw new BookStoreException(BookStoreConstants.BOOK + BookStoreConstants.NOT_AVAILABLE);
 		}
-
-		// Then make the purchase.
-		for (BookCopy bookCopyToBuy : bookCopiesToBuy) {
-			book = bookMap.get(bookCopyToBuy.getISBN());
-			book.buyCopies(bookCopyToBuy.getNumCopies());
+      
+		readWriteLock.writeLock().lock();
+		//		 Then make the purchase.
+		try{
+			for (BookCopy bookCopyToBuy : bookCopiesToBuy) {
+				book = bookMap.get(bookCopyToBuy.getISBN());
+				book.buyCopies(bookCopyToBuy.getNumCopies());
+			}
+		} finally{
+			readWriteLock.writeLock().unlock();
 		}
+		
 	}
 
 	/*
