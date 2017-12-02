@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import com.acertainbookstore.business.Book;
 import com.acertainbookstore.business.BookCopy;
+import com.acertainbookstore.business.BookEditorPick;
 import com.acertainbookstore.business.SingleLockConcurrentCertainBookStore;
 import com.acertainbookstore.business.ImmutableStockBook;
 import com.acertainbookstore.business.StockBook;
@@ -379,7 +380,7 @@ public class BookStoreTest {
 		copiesToAdd.add(book);
 		storeManager.addCopies(copiesToAdd);
 		HashSet<BookCopy> oneBook = new HashSet<>(Arrays.asList(new BookCopy(TEST_ISBN, 1)));
-
+		
         Thread C1 = new Thread(() -> {
             try {
                 for(int i = 0; i < ITERATIONS; i++) {
@@ -411,7 +412,7 @@ public class BookStoreTest {
 
 		List<StockBook> booksInStore = storeManager.getBooks();
         StockBook defaultBook = booksInStore.get(0);
-		assertTrue(defaultBook.getNumCopies() == ITERATIONS);
+		assertTrue(defaultBook.getNumCopies() == ITERATIONS + NUM_COPIES);
 	}
 
 	/**
@@ -484,8 +485,123 @@ public class BookStoreTest {
 		}
 
 	}
-
-
+	
+	/**
+	 * Tests that addBooks and removeBooks respect before-and-after semantics.
+	 * That is, it is not possible to see a state where a call to addBooks or removeBooks is half-finished.
+	 *
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testAddAndRemoveConcurrent() {
+		int ITERATIONS = 10000;
+		int INITIAL_COPIES = 10;
+		Set<StockBook> booktoAdd = new HashSet<StockBook>();
+		HashSet<Integer> isbnSet = new HashSet<Integer>();
+		StockBook book1 = new ImmutableStockBook(1, "NewBook", "George RR Testin'", (float) 10, INITIAL_COPIES, 0, 0,
+				0, false); 
+		StockBook book2 = new ImmutableStockBook(2, "Book2", "George  Orwell'", (float) 10, INITIAL_COPIES, 0, 0,
+				0, false); 
+		StockBook book3 = new ImmutableStockBook(3, "Book3", "Ursula K. Le Test", (float) 10, INITIAL_COPIES, 0, 0,
+				0, false);
+		booktoAdd.add(book1);booktoAdd.add(book2);booktoAdd.add(book3);
+		isbnSet.add(book1.getISBN());isbnSet.add(book2.getISBN());isbnSet.add(book3.getISBN());
+		Thread C1 = new Thread(()->{
+			for (int i = 0; i < ITERATIONS; i++ ){
+				try {
+					storeManager.addBooks(booktoAdd);
+					storeManager.removeBooks(isbnSet);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		C1.start();
+		
+		Thread C2 = new Thread(()->{
+			for(int i = 0; i < ITERATIONS; i++){
+				try {
+					List<StockBook> bookInStock = storeManager.getBooks();
+					assertTrue(bookInStock.size()==1
+							||bookInStock.size() == 1 + booktoAdd.size() );
+					break;
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		C2.start();
+		
+		try{
+			C1.join();
+			C2.join();
+		}catch (InterruptedException ex) {
+			fail();
+		}
+	}
+    
+	/**
+	 * Tests that updateEditorPicks 
+	 *
+	 * @throws BookStoreException
+	 */
+	
+	@Test
+	public void testUpdateEitorPicks() throws BookStoreException {
+		int ITERATIONS = 10000;
+		Set<StockBook> booktoStock = new HashSet<StockBook>();
+		StockBook book1 = new ImmutableStockBook(1, "Book1", "George RR Testin'", (float) 10, 10, 0, 0,
+				0, false); 
+		StockBook book2 = new ImmutableStockBook(2, "Book2", "George  Orwell'", (float) 10, 10, 0, 0,
+				0, false); 
+		booktoStock.add(book1);booktoStock.add(book2);
+		
+		Set<BookEditorPick> booktoTrue = new HashSet<BookEditorPick>();
+		Set<BookEditorPick> booktoFalse = new HashSet<BookEditorPick>();
+		
+		BookEditorPick pickT1 = new BookEditorPick(1,true);
+		BookEditorPick pickT2 = new BookEditorPick(2,true);
+		
+		BookEditorPick pickF1 = new BookEditorPick(1,false);
+		BookEditorPick pickF2 = new BookEditorPick(2,false);
+		
+		booktoTrue.add(pickT1);booktoTrue.add(pickT2);
+		booktoFalse.add(pickF1);booktoFalse.add(pickF2);
+		storeManager.addBooks(booktoStock);
+		Thread C1 = new Thread(()->{
+			try {
+				for (int i = 0; i < ITERATIONS; i++){
+					storeManager.updateEditorPicks(booktoTrue);
+				}
+			}catch (BookStoreException ex){}
+		});
+		C1.start();
+		
+		Thread C2 = new Thread(()->{
+			for (int i = 0; i< ITERATIONS; i++){
+				try {
+					storeManager.updateEditorPicks(booktoFalse);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		
+		C2.start();
+					
+		try {
+			C1.join();
+			C2.join();
+		} catch (InterruptedException ex) {
+        	fail();
+		}
+		List<StockBook> booksInStore = storeManager.getBooks();
+       int picks = booksInStore.size();
+       System.out.println(client.getEditorPicks(picks).size());
+		assertTrue(client.getEditorPicks(picks).size() == 2
+				||client.getEditorPicks(picks).size() == 0);
+	}
+	
 	/**
 	 * Tear down after class.
 	 *
