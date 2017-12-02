@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import com.acertainbookstore.interfaces.BookStore;
 import com.acertainbookstore.interfaces.StockManager;
@@ -28,6 +29,9 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 	/** The mapping of books from ISBN to {@link BookStoreBook}. */
 	private Map<Integer, BookStoreBook> bookMap = null;
 
+	private ReadWriteLock globalLock = null;
+	private Map<Integer, ReadWriteLock> lockMap = null;
+
 	/**
 	 * Instantiates a new {@link CertainBookStore}.
 	 */
@@ -35,6 +39,55 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 		// Constructors are not synchronized
 		bookMap = new HashMap<>();
 	}
+
+	private void takeLocalReadLock(int isbn) throws BookStoreException {
+		ReadWriteLock localLock = lockMap.get(isbn);
+		if (localLock == null) {
+			throw new BookStoreException("Lock " + isbn + " does not exist");
+		}
+
+		globalLock.readLock().lock();
+		localLock.readLock().lock();
+	}
+
+	private void releaseLocalReadLock(int isbn) throws BookStoreException {
+		ReadWriteLock localLock = lockMap.get(isbn);
+		if (localLock == null) {
+			throw new BookStoreException("Lock " + isbn + " does not exist");
+		}
+
+		localLock.readLock().unlock();
+		globalLock.readLock().unlock();
+	}
+
+	private void takeLocalWriteLock(int isbn) throws BookStoreException {
+		ReadWriteLock localLock = lockMap.get(isbn);
+		if (localLock == null) {
+			throw new BookStoreException("Lock " + isbn + " does not exist");
+		}
+
+		globalLock.readLock().lock();
+		localLock.writeLock().lock();
+	}
+
+	private void releaseLocalWriteLock(int isbn) throws BookStoreException {
+		ReadWriteLock localLock = lockMap.get(isbn);
+		if (localLock == null) {
+			throw new BookStoreException("Lock " + isbn + " does not exist");
+		}
+
+		localLock.writeLock().unlock();
+		globalLock.readLock().unlock();
+	}
+
+	private void takeGlobalLock() {
+		globalLock.writeLock().lock();
+	}
+
+	private void releaseGlobalLock() {
+		globalLock.writeLock().unlock();
+	}
+
 
 	/*
 	 * (non-Javadoc)
