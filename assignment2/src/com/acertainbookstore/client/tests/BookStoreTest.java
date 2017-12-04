@@ -16,6 +16,7 @@ import org.junit.Test;
 import com.acertainbookstore.business.Book;
 import com.acertainbookstore.business.BookCopy;
 import com.acertainbookstore.business.BookEditorPick;
+import com.acertainbookstore.business.BookRating;
 import com.acertainbookstore.business.SingleLockConcurrentCertainBookStore;
 import com.acertainbookstore.business.ImmutableStockBook;
 import com.acertainbookstore.business.StockBook;
@@ -44,7 +45,7 @@ public class BookStoreTest {
 	private static boolean localTest = true;
 
 	/** Single lock test */
-	private static boolean singleLock = true;
+	private static boolean singleLock = false;
 
 	
 	/** The store manager. */
@@ -390,7 +391,7 @@ public class BookStoreTest {
             	;
 			}
         });
-        C1.start();
+      
 
         Thread C2 = new Thread(() -> {
 			try {
@@ -401,6 +402,8 @@ public class BookStoreTest {
 				;
 			}
         });
+        
+        C1.start();
         C2.start();
 
         try {
@@ -603,6 +606,71 @@ public class BookStoreTest {
         C1.join();
         C2.join();
 	}
+	
+	/**
+	 * Test that rate books respect before-and-after semantics.
+	 *
+	 * @throws BookStoreException
+	 *             the book store exception
+	 */
+
+    @Test
+
+    public void testRatedBooks() throws BookStoreException  {
+        
+    	int ITERATIONS = 100000;
+		Set<StockBook> bookToStock = new HashSet<StockBook>();
+
+		HashSet<BookRating> isbnList1 = new HashSet<>();
+		HashSet<BookRating> isbnList2 = new HashSet<>();
+
+		StockBook book1 = new ImmutableStockBook(1, "F", "A", (float) 10, 10, 0, 0,
+				0, false);
+		StockBook book2 = new ImmutableStockBook(2, "F", "A", (float) 10, 10, 0, 0,
+				0, false);
+		StockBook book3 = new ImmutableStockBook(3, "F", "A", (float) 10, 10, 0, 0,
+				0, false);
+		bookToStock.add(book1);bookToStock.add(book2);bookToStock.add(book3);
+		
+		storeManager.addBooks(bookToStock);
+
+		isbnList1.add(new BookRating(1,1));
+		isbnList1.add(new BookRating(2,2));
+		isbnList1.add(new BookRating(3,5));
+		
+		isbnList2.add(new BookRating(1,3));
+		isbnList2.add(new BookRating(2,4));
+		isbnList2.add(new BookRating(3,3));
+		
+		Thread C1 = new Thread(()->{
+			try {
+				for (int i = 0; i < ITERATIONS; i++){
+					client.rateBooks(isbnList1);
+				}
+			} catch (BookStoreException ex) {
+				ex.printStackTrace();
+			}
+		});
+		
+		try {
+			for (int i = 0; i < ITERATIONS; i++){
+				client.rateBooks(isbnList2);
+			}
+		} catch (BookStoreException ex) {
+			ex.printStackTrace();
+		}
+		
+		C1.start();
+		try {
+			C1.join();
+		} catch (InterruptedException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}
+		List<Book> books = client.getTopRatedBooks(1);   //valid
+		assertTrue(books.get(0).getISBN() == 3);
+
+    }
 	
 	/**
 	 * Tear down after class.

@@ -2,6 +2,8 @@ package com.acertainbookstore.business;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -29,6 +31,8 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 
 	/** The mapping of books from ISBN to {@link BookStoreBook}. */
 	private Map<Integer, BookStoreBook> bookMap = null;
+	/** Global lock for the bookstore state. */
+	private ReadWriteLock readWriteLock = null;
 
 	/**
 	 * Instantiates a new {@link SingleLockConcurrentCertainBookStore}.
@@ -38,9 +42,6 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 		bookMap = new HashMap<>();
 		readWriteLock = new ReentrantReadWriteLock();
 	}
-
-	//Global lock for the bookstore state
-	private ReadWriteLock readWriteLock;
 
 	private void takeReadLock() { readWriteLock.readLock().lock(); }
 	private void releaseReadLock() { readWriteLock.readLock().unlock(); }
@@ -413,7 +414,79 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 	 */
 	@Override
 	public List<Book> getTopRatedBooks(int numBooks) throws BookStoreException {
-		throw new BookStoreException();
+		
+		if (numBooks < 0) {
+			throw new BookStoreException("numBooks = " + numBooks + ", but it must be positive");
+		}
+
+		List<BookStoreBook> listSortedRatedBooks = new ArrayList<BookStoreBook>();
+		List<Book> listTopRatedBooks = new ArrayList<>();
+		Iterator<Entry<Integer, BookStoreBook>> it = bookMap.entrySet().iterator();
+
+		BookStoreBook book;
+		takeReadLock();
+		try {
+		    //Get all books
+
+		    while (it.hasNext()) {
+				Entry<Integer, BookStoreBook> pair = it.next();
+				book = pair.getValue();
+				listSortedRatedBooks.add(book);
+			}	
+
+	    	// Sort all books that are rated
+
+		    Collections.sort(listSortedRatedBooks,new Comparator <BookStoreBook>(){
+
+		    	public int compare( BookStoreBook b1,BookStoreBook b2){
+
+		    		float averageRate1 = b1.getAverageRating();
+		    		float averageRate2 = b2.getAverageRating();
+		    		if (averageRate1 < averageRate2 )
+		    			return 1;
+		    		else{
+		    			if (averageRate1 == averageRate2 )
+		    				return 0;
+		    			else 
+		    				return -1;
+		    		}  		
+		    	}
+
+		    });
+
+			// Find numBooks descending indices of books that will be picked.
+
+					Set<Integer> tobePicked = new HashSet<>();
+					int rangePicks = listSortedRatedBooks.size();
+					if (rangePicks <= numBooks) {
+						
+						// We need to add all books.
+
+						for (int i = 0; i < rangePicks; i++) {
+							tobePicked.add(i);
+						}
+
+					} else {
+
+						// We need to pick top k rated books that need to be returned.
+						int indexNum = 0;
+						while (tobePicked.size() < numBooks) {
+							tobePicked.add(indexNum);
+							indexNum++;
+						}
+					}
+
+					// Get the numBooks books.
+
+					for (Integer index : tobePicked) {
+						book = listSortedRatedBooks.get(index);
+						listTopRatedBooks.add(book.immutableBook());
+					}
+					return listTopRatedBooks;
+		}finally {
+			releaseReadLock();
+		}
+	
 	}
 
 	/*
@@ -433,7 +506,55 @@ public class SingleLockConcurrentCertainBookStore implements BookStore, StockMan
 	 */
 	@Override
 	public void rateBooks(Set<BookRating> bookRating) throws BookStoreException {
-		throw new BookStoreException();
+		if (bookRating == null) {
+			throw new BookStoreException(BookStoreConstants.NULL_INPUT);
+		}
+
+		// Check that all ISBNs that we rate are there first.
+
+		int isbn;
+		int ratings;
+		BookStoreBook book;
+		takeWriteLock();
+		try {
+			for (BookRating bookToRate : bookRating) {
+
+				isbn = bookToRate.getISBN();
+
+				ratings = bookToRate.getRating();
+
+				if (BookStoreUtility.isInvalidISBN(isbn)) {
+					throw new BookStoreException(BookStoreConstants.ISBN + isbn + BookStoreConstants.INVALID);
+				}
+
+				if (!bookMap.containsKey(isbn)) {
+					throw new BookStoreException(BookStoreConstants.ISBN + isbn + BookStoreConstants.NOT_AVAILABLE);
+				}
+
+				if (BookStoreUtility.isInvalidRating(ratings)) {
+					throw new BookStoreException(BookStoreConstants.RATING + ratings + BookStoreConstants.INVALID);
+				}
+
+				book = bookMap.get(isbn);
+
+				if (book.hadSaleMiss() == true) {
+
+					// If the book is not in the collection it will throw a exception.
+
+					throw new BookStoreException(BookStoreConstants.BOOK + BookStoreConstants.NOT_AVAILABLE);
+				}
+			}
+			//update the sum of ratings and the number of ratings
+
+			for (BookRating bookToRate : bookRating) {
+
+				book = bookMap.get(bookToRate.getISBN());
+
+				book.addRating(bookToRate.getRating());
+			}
+		}finally {
+			releaseWriteLock();
+		}
 	}
 
 	/*
