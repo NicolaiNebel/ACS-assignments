@@ -176,11 +176,10 @@ So for each of the different scenarios we have:
 
        At the bottom level, there is one read-write lock for each book in the
        bookstore. We use \textbf{takeLocalWriteLock} on data items that are modified and
-       \textbf{takeLocalReadLock} on data items that are only read. 
-
-       We do this at the start of the function call (as needed).
-       We release locks on objects at the end of the function or in case of some
-       exception being thrown. 
+       \textbf{takeLocalReadLock} on data items that are only read.
+       We do this during the execution of the transaction as needed.
+       We release locks on objects at the end of the transaction or in case of some
+       exception being thrown.
 
        At each level the transactions are executed as if in serial order, so the
        \textit{TwoLevelLockingConcurrentCertainBookStore} has the correct
@@ -211,7 +210,26 @@ So for each of the different scenarios we have:
       consideration when writing tests is a good idea.
 		\end{itemize}
   \item
-    Foo. Bar. 2PL...
+     The \textit{SingleLockConcurrentCertainBookStore} implementation is
+     not only equivalent with strict 2PL, it is also equivalent with
+     conservative 2PL. This is because all functions immediately take all locks
+     (the only lock) they need and release it at the very end of the call.\\
+
+     For \textit{TwoLevelLockingConcurrentCertainBookStore}, things are a little
+     more complicated. In 2PL, there is a growing phase and a shrinking
+     phase. Locks are taken in the growing phase and released in the shrinking
+     phase. Strict 2PL also requires that all exclusive locks are released at
+     the very end of the transaction, when either commiting or aborting.
+
+     The growing phase is encoded in our implementation simply as part of the
+     function body. The thread acquires locks on objects as it needs them. The
+     shrinking is embedded in the \verb|finally| blocks that wrap the function
+     body. Here, all locks taken by the transaction are released. Since this
+     includes all exclusive locks, the implementation is strict.
+
+     Since we implement a shrinking and growing phase and all exclusive locks
+     are released only upon commit or abort, our implementation is equivalent to
+     strict 2PL.
 	\item
 		\begin{itemize}
 		 \item
