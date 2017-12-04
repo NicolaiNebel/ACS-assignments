@@ -622,7 +622,6 @@ public class BookStoreTest {
 		Set<StockBook> bookToStock = new HashSet<StockBook>();
 
 		HashSet<BookRating> isbnList1 = new HashSet<>();
-		HashSet<BookRating> isbnList2 = new HashSet<>();
 
 		StockBook book1 = new ImmutableStockBook(1, "F", "A", (float) 10, 10, 0, 0,
 				0, false);
@@ -635,13 +634,9 @@ public class BookStoreTest {
 		storeManager.addBooks(bookToStock);
 
 		isbnList1.add(new BookRating(1,1));
-		isbnList1.add(new BookRating(2,2));
-		isbnList1.add(new BookRating(3,5));
-		
-		isbnList2.add(new BookRating(1,3));
-		isbnList2.add(new BookRating(2,4));
-		isbnList2.add(new BookRating(3,3));
-		
+		isbnList1.add(new BookRating(2,1));
+		isbnList1.add(new BookRating(3,1));
+
 		Thread C1 = new Thread(()->{
 			try {
 				for (int i = 0; i < ITERATIONS; i++){
@@ -651,25 +646,25 @@ public class BookStoreTest {
 				ex.printStackTrace();
 			}
 		});
-		
+
+		C1.start();
+
 		try {
 			for (int i = 0; i < ITERATIONS; i++){
-				client.rateBooks(isbnList2);
+			    Set<Integer> isbns = new HashSet<>(Arrays.asList(1,2,3));
+				List<StockBook> sbooks = storeManager.getBooksByISBN(isbns);
+				assertTrue(sbooks.get(0).getTotalRating() == sbooks.get(1).getTotalRating()
+							&& sbooks.get(0).getTotalRating() == sbooks.get(2).getTotalRating());
 			}
 		} catch (BookStoreException ex) {
 			ex.printStackTrace();
 		}
 		
-		C1.start();
 		try {
 			C1.join();
 		} catch (InterruptedException e) {
-			// TODO 自动生成的 catch 块
 			e.printStackTrace();
 		}
-		List<Book> books = client.getTopRatedBooks(1);   //valid
-		assertTrue(books.get(0).getISBN() == 3);
-
     }
 	
 	/**
