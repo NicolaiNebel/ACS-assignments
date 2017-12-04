@@ -73,9 +73,12 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 		if (localLock == null) {
 			return;
 		}
-
-		localLock.readLock().unlock();
-		globalLock.readLock().unlock();
+		try{
+			localLock.readLock().unlock();
+			globalLock.readLock().unlock();
+		}catch(IllegalMonitorStateException ex){
+			;
+		}		
 	}
 
 	private void takeLocalWriteLock(int isbn) throws BookStoreException {
@@ -102,8 +105,12 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 			return;
 		}
 
-		localLock.writeLock().unlock();
-		globalLock.readLock().unlock();
+		try {
+			localLock.writeLock().unlock();	
+			globalLock.readLock().unlock();
+		} catch (IllegalMonitorStateException ex) {
+			;
+		}
 	}
 
 	private void takeGlobalLock() {
@@ -186,17 +193,17 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 		if (bookCopiesSet == null) {
 			throw new BookStoreException(BookStoreConstants.NULL_INPUT);
 		}
-        
-		/* take locks */
-		for (BookCopy bc : bookCopiesSet){
-			takeLocalWriteLock(bc.getISBN());
-		}
 		
 		try{
+			
+			
 			for (BookCopy bookCopy : bookCopiesSet) {
 				isbn = bookCopy.getISBN();
 				numCopies = bookCopy.getNumCopies();
-
+				
+				/* take locks */
+				takeLocalWriteLock(isbn);
+				
 				if (BookStoreUtility.isInvalidISBN(isbn)) {
 					throw new BookStoreException(BookStoreConstants.ISBN + isbn + BookStoreConstants.INVALID);
 				}
@@ -269,15 +276,13 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 		}
 
 		int isbnValue;
-
-		/* take locks */
-		for (BookEditorPick bp : editorPicks){
-			takeLocalWriteLock(bp.getISBN());
-		}
 		
 		try{
 			for (BookEditorPick editorPickArg : editorPicks) {
 				isbnValue = editorPickArg.getISBN();
+				
+				/* take locks */
+				takeLocalWriteLock(isbnValue);
 
 				if (BookStoreUtility.isInvalidISBN(isbnValue)) {
 					throw new BookStoreException(BookStoreConstants.ISBN + isbnValue + BookStoreConstants.INVALID);
@@ -316,14 +321,13 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 
 		Map<Integer, Integer> salesMisses = new HashMap<>();
 
-		/* take locks */
-		for (BookCopy bc : bookCopiesToBuy) {
-			takeLocalWriteLock(bc.getISBN());
-		}
 		try {
 			for (BookCopy bookCopyToBuy : bookCopiesToBuy) {
 				isbn = bookCopyToBuy.getISBN();
-
+				
+				/* take locks */
+				takeLocalWriteLock(isbn);
+				
 				if (bookCopyToBuy.getNumCopies() < 0) {
 					throw new BookStoreException(
 							BookStoreConstants.NUM_COPIES + bookCopyToBuy.getNumCopies() + BookStoreConstants.INVALID);
@@ -380,13 +384,12 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 			throw new BookStoreException(BookStoreConstants.NULL_INPUT);
 		}
 
-		/* take locks */
-		for(Integer isbn : isbnSet){
-			takeLocalReadLock(isbn);			
-		}
+		
 		
 		try{
 			for (Integer ISBN : isbnSet) {
+				/* take locks */
+				takeLocalReadLock(ISBN);	
 				if (BookStoreUtility.isInvalidISBN(ISBN)) {
 					throw new BookStoreException(BookStoreConstants.ISBN + ISBN + BookStoreConstants.INVALID);
 				}
@@ -419,14 +422,15 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 			throw new BookStoreException(BookStoreConstants.NULL_INPUT);
 		}
 		
-		/* take locks */
-		for(Integer isbn : isbnSet){
-			takeLocalReadLock(isbn);
-		}
+		
+
 		
 		try{
 			// Check that all ISBNs that we rate are there to start with.
 			for (Integer ISBN : isbnSet) {
+				
+				/* take locks */
+				takeLocalReadLock(ISBN);
 				if (BookStoreUtility.isInvalidISBN(ISBN)) {
 					throw new BookStoreException(BookStoreConstants.ISBN + ISBN + BookStoreConstants.INVALID);
 				}
@@ -470,15 +474,13 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 
 
         try{
-            /* take locks */
-			for (BookStoreBook bs : bookMapValues) {
-				takeLocalReadLock(bs.getISBN());
-			}
 
             // Get all books that are editor picks.
             while (it.hasNext()) {
                 Entry<Integer, BookStoreBook> pair = it.next();
                 book = pair.getValue();
+                /* take locks */
+                takeLocalReadLock(pair.getKey());
                 if (book.isEditorPick()) {
                     listAllEditorPicks.add(book);
                 }
@@ -539,15 +541,14 @@ public class TwoLevelLockingConcurrentCertainBookStore implements BookStore, Sto
 
 
 		try{
-            /* take locks */
-			for (BookStoreBook bs : bookMapValues) {
-				takeLocalReadLock(bs.getISBN());
-			}
-
+   
 		    //Get all books
 		    while (it.hasNext()) {
 				Entry<Integer, BookStoreBook> pair = it.next();
 				book = pair.getValue();
+				
+		         /* take locks */
+				takeLocalReadLock(pair.getKey());
 				listSortedRatedBooks.add(book);
 			}	
 	
