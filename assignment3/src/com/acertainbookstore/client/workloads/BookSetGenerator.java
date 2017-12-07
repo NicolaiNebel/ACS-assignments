@@ -1,7 +1,9 @@
 package com.acertainbookstore.client.workloads;
 
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
+import com.acertainbookstore.business.ImmutableStockBook;
 import com.acertainbookstore.business.StockBook;
 
 /**
@@ -10,8 +12,25 @@ import com.acertainbookstore.business.StockBook;
  */
 public class BookSetGenerator {
 
-	public BookSetGenerator() {
-		// TODO Auto-generated constructor stub
+	private int latestStockBookISBN;
+
+	//Configuration for book generation
+	private int initialCopies;
+	private int titleLen;
+	private int authorLen;
+
+	public BookSetGenerator(WorkloadConfiguration config) {
+		latestStockBookISBN = 0;
+		initialCopies = config.getNumAddCopies();
+		titleLen = config.getBookTitleLength();
+		authorLen = config.getBookAuthorLength();
+	}
+
+	public BookSetGenerator(WorkloadConfiguration config, int booksAlreadyInStore) {
+		latestStockBookISBN = booksAlreadyInStore;
+		initialCopies = config.getNumAddCopies();
+		titleLen = config.getBookTitleLength();
+		authorLen = config.getBookAuthorLength();
 	}
 
 	/**
@@ -21,7 +40,10 @@ public class BookSetGenerator {
 	 * @return
 	 */
 	public Set<Integer> sampleFromSetOfISBNs(Set<Integer> isbns, int num) {
-		return null;
+		ArrayList<Integer> list = new ArrayList<>();
+		isbns.iterator().forEachRemaining(list::add);
+		Collections.shuffle(list);
+		return new HashSet<>(list.subList(0,num));
 	}
 
 	/**
@@ -31,7 +53,33 @@ public class BookSetGenerator {
 	 * @return
 	 */
 	public Set<StockBook> nextSetOfStockBooks(int num) {
-		return null;
+		HashSet<StockBook> bookSet = new HashSet<>();
+		for (int i = 0; i < num; i++) {
+			latestStockBookISBN++;
+			StockBook book = new ImmutableStockBook(latestStockBookISBN,
+													getRandomString(titleLen),
+													getRandomString(authorLen),
+													10,
+													initialCopies,
+													0,
+													0,
+													0,
+													false);
+			bookSet.add(book);
+		}
+		return bookSet;
 	}
+
+	private String chars = "abcdefghijklmnoprstuvwxyz";
+
+	private String getRandomString(int length) {
+		char[] buf = new char[length];
+		for (int i = 0; i < length; i++) {
+		    int pick = ThreadLocalRandom.current().nextInt(chars.length());
+			buf[i] = chars.charAt(pick);
+		}
+		return buf.toString();
+	}
+
 
 }
