@@ -3,13 +3,18 @@
  */
 package com.acertainbookstore.client.workloads;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import com.acertainbookstore.business.CertainBookStore;
+import com.acertainbookstore.business.ImmutableStockBook;
+import com.acertainbookstore.business.StockBook;
 import com.acertainbookstore.client.BookStoreHTTPProxy;
 import com.acertainbookstore.client.StockManagerHTTPProxy;
 import com.acertainbookstore.interfaces.BookStore;
@@ -29,6 +34,9 @@ public class CertainWorkload {
 	/**
 	 * @param args
 	 */
+	private static int INITIAL_ISBN = 3044560;
+	private static int NUM_COPIES = 10;
+	
 	public static void main(String[] args) throws Exception {
 		int numConcurrentWorkloadThreads = 10;
 		String serverAddress = "http://localhost:8081";
@@ -60,12 +68,15 @@ public class CertainWorkload {
 		ExecutorService exec = Executors
 				.newFixedThreadPool(numConcurrentWorkloadThreads);
 
+		
 		for (int i = 0; i < numConcurrentWorkloadThreads; i++) {
 			WorkloadConfiguration config = new WorkloadConfiguration(bookStore,
 					stockManager);
 			Worker workerTask = new Worker(config);
+			
 			// Keep the futures to wait for the result from the thread
 			runResults.add(exec.submit(workerTask));
+			
 		}
 
 		// Get the results from the threads using the futures returned
@@ -81,7 +92,6 @@ public class CertainWorkload {
 			((BookStoreHTTPProxy) bookStore).stop();
 			((StockManagerHTTPProxy) stockManager).stop();
 		}
-
 		reportMetric(workerRunResults);
 	}
 
@@ -90,10 +100,28 @@ public class CertainWorkload {
 	 * 
 	 * @param workerRunResults
 	 */
+
 	public static void reportMetric(List<WorkerRunResult> workerRunResults) {
 		// TODO: You should aggregate metrics and output them for plotting here
-	}
+		BigDecimal throughPut;
+		BigDecimal aggThroughPut = new BigDecimal(0);
+		BigDecimal interactions,runTimes; 
+		double averageTime = 0;
+		long totalTime = 0;
+		long totalPut = 0;
 
+		List<BigDecimal> aggThroughPuts = new ArrayList<BigDecimal>(); 
+		for (WorkerRunResult runResult : workerRunResults){
+			interactions = new BigDecimal(Double.toString(runResult.getSuccessfulInteractions()));
+			runTimes = new BigDecimal(Double.toString(runResult.getElapsedTimeInNanoSecs()));
+			throughPut = interactions.divide(runTimes,10, BigDecimal.ROUND_HALF_UP);
+			aggThroughPut = aggThroughPut.add(throughPut);
+			totalTime += runResult.getElapsedTimeInNanoSecs();
+			totalPut += runResult.getSuccessfulInteractions();
+		}
+		averageTime = totalTime/workerRunResults.size();
+	}
+	
 	/**
 	 * Generate the data in bookstore before the workload interactions are run
 	 * 
@@ -104,6 +132,10 @@ public class CertainWorkload {
 			StockManager stockManager) throws BookStoreException {
 
 		// TODO: You should initialize data for your bookstore here
-
+		StockBook initial_book = new ImmutableStockBook(INITIAL_ISBN, "Harry Potter and JUnit", "JK Unit", (float) 10, NUM_COPIES, 0, 0, 0,
+				false);
+		Set<StockBook> booksToAdd = new HashSet<StockBook>();
+		booksToAdd.add(initial_book);
+		stockManager.addBooks(booksToAdd);
 	}
 }

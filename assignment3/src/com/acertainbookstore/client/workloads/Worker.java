@@ -3,9 +3,22 @@
  */
 package com.acertainbookstore.client.workloads;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
+import com.acertainbookstore.business.Book;
+import com.acertainbookstore.business.BookCopy;
+import com.acertainbookstore.business.StockBook;
+import com.acertainbookstore.business.CertainBookStore;
+import com.acertainbookstore.interfaces.BookStore;
+import com.acertainbookstore.interfaces.StockManager;
 import com.acertainbookstore.utils.BookStoreException;
 
 /**
@@ -18,7 +31,7 @@ public class Worker implements Callable<WorkerRunResult> {
     private WorkloadConfiguration configuration = null;
     private int numSuccessfulFrequentBookStoreInteraction = 0;
     private int numTotalFrequentBookStoreInteraction = 0;
-
+    
     public Worker(WorkloadConfiguration config) {
 	configuration = config;
     }
@@ -97,8 +110,34 @@ public class Worker implements Callable<WorkerRunResult> {
      * 
      * @throws BookStoreException
      */
-    private void runRareStockManagerInteraction() throws BookStoreException {
+    private synchronized void runRareStockManagerInteraction() throws BookStoreException {
 	// TODO: Add code for New Stock Acquisition Interaction
+    	
+    	 List<StockBook> bookToGet =  configuration.getStockManager().getBooks();
+    	 Set<StockBook> generateBooks = new HashSet<>();
+    	 Set<StockBook> bookToAdd = new HashSet<>();
+    	 List<Integer> isbnset = new ArrayList<>();
+    	 
+    	 BookSetGenerator bookGenerator = new BookSetGenerator(bookToGet.size());
+    	 
+//    	 generateBooks = BookSetGenerator.nextSetOfStockBooks(configuration.getNumBooksToAdd());
+    	 generateBooks = bookGenerator.nextSetOfStockBooks(1);
+    	 
+    	 for (StockBook sb : bookToGet){
+    		 isbnset.add(sb.getISBN());
+    	 }
+    	 
+    	 boolean isContains = false;
+    	 for (StockBook book : generateBooks){
+    		 isContains = isbnset.contains(book.getISBN());
+    		 if(isContains==false){
+    			 bookToAdd.add(book);
+    		 }
+    	 }
+    	
+//    	 System.out.println("numOfBooks"+bookToGet);
+//    	 System.out.println("booktoadd"+generateBooks);
+    	 configuration.getStockManager().addBooks(bookToAdd);
     }
 
     /**
@@ -106,8 +145,58 @@ public class Worker implements Callable<WorkerRunResult> {
      * 
      * @throws BookStoreException
      */
-    private void runFrequentStockManagerInteraction() throws BookStoreException {
+    private synchronized void runFrequentStockManagerInteraction() throws BookStoreException {
 	// TODO: Add code for Stock Replenishment Interaction
+    	
+    	StockManager stockManager = configuration.getStockManager();
+    	List<StockBook> listSortedCopiesBooks = stockManager.getBooks();
+    	Set<BookCopy> bookCopiesSet = new HashSet<BookCopy>();
+   	    int numOfBooks = configuration.getNumBooksWithLeastCopies(); 
+
+	    StockBook stockbook;
+
+	    // Sort all books according to the number of their copies in an ascending order
+		
+	    Collections.sort(listSortedCopiesBooks,new Comparator <StockBook>(){
+
+	    	public int compare( StockBook b1,StockBook b2){
+	    		String NumCopies1 = String.valueOf(b1.getNumCopies());
+	    		String NumCopies2 = String.valueOf(b2.getNumCopies());
+	    		return NumCopies1.compareTo( NumCopies2);
+	    	}
+
+	    });	
+	    
+	   // Find numBooks descending indices of books that will be picked.
+		
+	 			Set<Integer> tobePicked = new HashSet<>();
+	 			int rangePicks = listSortedCopiesBooks.size();
+	 			if (rangePicks <= numOfBooks) {
+	 				
+	 				// We need to add all books.
+	 				for (int i = 0; i < rangePicks; i++) {
+	 					tobePicked.add(i);
+	 				}
+
+	 			} else {
+
+	 				// We need to pick top k  books with smallest quantities in stock.
+
+	 				int indexNum = 0;
+	 				while (tobePicked.size() < numOfBooks) {
+	 					tobePicked.add(indexNum);
+	 					indexNum++;
+	 				}
+	 			}
+
+	 	// Addcopies to the k books with smallest quantities in stock.
+
+	 			for (Integer index : tobePicked) {
+	 				stockbook = listSortedCopiesBooks.get(index);
+	 				bookCopiesSet.add(new BookCopy(stockbook.getISBN(), configuration.getNumBookCopiesToBuy()));
+	 			}
+	 			stockManager.addCopies(bookCopiesSet); 	
+	 			
     }
 
     /**
@@ -117,6 +206,31 @@ public class Worker implements Callable<WorkerRunResult> {
      */
     private void runFrequentBookStoreInteraction() throws BookStoreException {
 	// TODO: Add code for Customer Interaction
+    	Random random = new Random();
+   	    int numOfPicked = random.nextInt(configuration.getNumEditorPicksToGet())+1;
+   	    BookStore storeBook = configuration.getBookStore();
+   	    
+    	List<Book> bookEditorPicked = storeBook.getEditorPicks(configuration.getNumEditorPicksToGet());
+    	List<Book> bookSampled = new ArrayList<Book>();
+    	Set<BookCopy> bookToBuy = new  HashSet<BookCopy>(); 
+    	
+    	Set<Integer> isbnSet = new HashSet<Integer>();
+    	
+    	BookCopy bookcopy;
+    	
+    	for (Book book : bookEditorPicked){
+    		isbnSet.add(book.getISBN());
+    	}
+    	
+    	// selects the k books with smallest quantities in stock
+    	bookSampled = storeBook.getBooks(configuration.getBookSetGenerator().sampleFromSetOfISBNs(isbnSet, numOfPicked));
+    	
+    	for (Book book : bookSampled){
+    		bookcopy = new BookCopy(book.getISBN(), configuration.getNumBookCopiesToBuy());
+    		bookToBuy.add(bookcopy);
+    	}
+    	
+    	storeBook.buyBooks(bookToBuy);   	
     }
 
 }

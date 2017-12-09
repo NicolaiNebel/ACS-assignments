@@ -15,22 +15,12 @@ public class BookSetGenerator {
 	private int latestStockBookISBN;
 
 	//Configuration for book generation
-	private int initialCopies;
-	private int titleLen;
-	private int authorLen;
+	private int initialCopies = 10;
+	private int titleLen = 5;
+	private int authorLen = 5;
 
-	public BookSetGenerator(WorkloadConfiguration config) {
-		latestStockBookISBN = 0;
-		initialCopies = config.getNumAddCopies();
-		titleLen = config.getBookTitleLength();
-		authorLen = config.getBookAuthorLength();
-	}
-
-	public BookSetGenerator(WorkloadConfiguration config, int booksAlreadyInStore) {
-		latestStockBookISBN = booksAlreadyInStore;
-		initialCopies = config.getNumAddCopies();
-		titleLen = config.getBookTitleLength();
-		authorLen = config.getBookAuthorLength();
+	public BookSetGenerator(int latestStockBook) {
+		latestStockBookISBN = latestStockBook;
 	}
 
 	/**
@@ -39,11 +29,15 @@ public class BookSetGenerator {
 	 * @param num
 	 * @return
 	 */
-	public Set<Integer> sampleFromSetOfISBNs(Set<Integer> isbns, int num) {
+	public  Set<Integer> sampleFromSetOfISBNs(Set<Integer> isbns, int num) {
 		ArrayList<Integer> list = new ArrayList<>();
-		isbns.iterator().forEachRemaining(list::add);
-		Collections.shuffle(list);
-		return new HashSet<>(list.subList(0,num));
+		if (isbns.size() <= num)
+			return isbns;
+		else {
+			isbns.iterator().forEachRemaining(list::add);
+			Collections.shuffle(list);
+			return new HashSet<>(list.subList(0,num));
+		}
 	}
 
 	/**
@@ -64,7 +58,7 @@ public class BookSetGenerator {
 													0,
 													0,
 													0,
-													false);
+													true);
 			bookSet.add(book);
 		}
 		return bookSet;
