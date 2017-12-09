@@ -110,18 +110,16 @@ public class Worker implements Callable<WorkerRunResult> {
      * 
      * @throws BookStoreException
      */
-    private synchronized void runRareStockManagerInteraction() throws BookStoreException {
+    private  void runRareStockManagerInteraction() throws BookStoreException {
 	// TODO: Add code for New Stock Acquisition Interaction
     	
-    	 List<StockBook> bookToGet =  configuration.getStockManager().getBooks();
+    	 StockManager stockManager =  configuration.getStockManager();
+    	 List<StockBook> bookToGet =  stockManager.getBooks();
     	 Set<StockBook> generateBooks = new HashSet<>();
     	 Set<StockBook> bookToAdd = new HashSet<>();
     	 List<Integer> isbnset = new ArrayList<>();
     	 
-    	 BookSetGenerator bookGenerator = new BookSetGenerator(bookToGet.size());
-    	 
-//    	 generateBooks = BookSetGenerator.nextSetOfStockBooks(configuration.getNumBooksToAdd());
-    	 generateBooks = bookGenerator.nextSetOfStockBooks(1);
+    	 generateBooks = BookSetGenerator.nextSetOfStockBooks(configuration.getNumBooksToAdd());
     	 
     	 for (StockBook sb : bookToGet){
     		 isbnset.add(sb.getISBN());
@@ -134,10 +132,8 @@ public class Worker implements Callable<WorkerRunResult> {
     			 bookToAdd.add(book);
     		 }
     	 }
-    	
-//    	 System.out.println("numOfBooks"+bookToGet);
-//    	 System.out.println("booktoadd"+generateBooks);
-    	 configuration.getStockManager().addBooks(bookToAdd);
+
+    	 stockManager.addBooks(bookToAdd);
     }
 
     /**
@@ -145,7 +141,7 @@ public class Worker implements Callable<WorkerRunResult> {
      * 
      * @throws BookStoreException
      */
-    private synchronized void runFrequentStockManagerInteraction() throws BookStoreException {
+    private  void runFrequentStockManagerInteraction() throws BookStoreException {
 	// TODO: Add code for Stock Replenishment Interaction
     	
     	StockManager stockManager = configuration.getStockManager();
@@ -196,7 +192,6 @@ public class Worker implements Callable<WorkerRunResult> {
 	 				bookCopiesSet.add(new BookCopy(stockbook.getISBN(), configuration.getNumBookCopiesToBuy()));
 	 			}
 	 			stockManager.addCopies(bookCopiesSet); 	
-	 			
     }
 
     /**
@@ -228,8 +223,7 @@ public class Worker implements Callable<WorkerRunResult> {
     	for (Book book : bookSampled){
     		bookcopy = new BookCopy(book.getISBN(), configuration.getNumBookCopiesToBuy());
     		bookToBuy.add(bookcopy);
-    	}
-    	
+    	}	
     	storeBook.buyBooks(bookToBuy);   	
     }
 
