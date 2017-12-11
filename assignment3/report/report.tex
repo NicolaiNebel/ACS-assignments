@@ -1,0 +1,82 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[head=26pt, a4paper, margin=1.2in, top=1.4in, bottom=1.75in]{geometry}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[hidelinks, colorlinks, urlcolor=blue, linkcolor=black,citecolor=magenta]
+{hyperref}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{mathtools}
+\usepackage{enumitem}
+
+
+\usepackage{indentfirst}
+\usepackage{a4wide}
+\usepackage{color}
+\usepackage{lipsum}
+\usepackage{multicol}
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,positioning}
+
+% ---------------- Page and margin/header/footer Setup -----------------
+\pagestyle{fancy}
+%\fancyhf{} % Clears header and footer
+\fancyhead{}
+\fancyfoot{}
+\lhead{ACS --- Assignment 3}
+\rhead{DIKU}
+\lfoot{Page \thepage\ of \pageref{LastPage}}
+\rfoot{Nicolai Jørgensen \\ Yiran Zhang}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+% ----------------------------------------------------------------------
+
+\newtheorem{mythm}{Theorem}
+\newtheorem{mydef}{Definition}
+
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\title          {Assignment 3}
+\author         {Nicolai Jørgensen and Yiran Zhang}
+
+\begin{document}
+
+\maketitle
+\newpage
+
+\section{Question 1}
+\begin{enumerate}
+	\item
+	In a system implementing force and no-steal, it is not necessary to implement a scheme for redo. Because all committed transaction to a page have been written to disk at the time of a subsequent crash. And it is also not necessary for undo, since all dirty write have not been written to disk at the time of a subsequent crash.
+	\item
+	 Non-volatile storage retains data even when power goes off. While the information in stable storage is certainly not lost(theoretically). A natural catastrophe may result in a loss if not the probability of data loss is negligible. And the non-volatile is faster than stable storage in terms of data access time.
+	 
+	 Crash failure can be survived by non-volatile storage, media failure can be survived by stable storage.
+	 \item
+	 When a transaction is committed, the log tail is forced to stable storage. Or when pages are written to disk in yet uncommitted transactions, the log tail is forced to stable storage.
+
+	 For the first case, if a transaction made a change and committed, the no-force approach means that some of the changes may not have been written to disk at the time of subsequent crash. Without a record of these changes, there would be no way to ensure that the changes of a committed transaction survive crash. 	
+	 
+	 For the second case, if the dirty write is written to the disk in yet uncommitted transaction at the time of subsequent crash, Without a records of these changes, there would be no way to undo the changes.
+	 
+	 They are sufficient for durability because they support redoing modifications and ensure all actions of committed transactions survive system crashes and media failures.
+	 
+\end{enumerate}
+
+\section{Question 2}
+\begin{enumerate}
+	\item
+
+\end{enumerate}
+
+\end{document}

@@ -110,7 +110,7 @@ public class Worker implements Callable<WorkerRunResult> {
      * 
      * @throws BookStoreException
      */
-    private  void runRareStockManagerInteraction() throws BookStoreException {
+    private synchronized  void runRareStockManagerInteraction() throws BookStoreException {
 	// TODO: Add code for New Stock Acquisition Interaction
     	
     	 StockManager stockManager =  configuration.getStockManager();
@@ -141,7 +141,7 @@ public class Worker implements Callable<WorkerRunResult> {
      * 
      * @throws BookStoreException
      */
-    private  void runFrequentStockManagerInteraction() throws BookStoreException {
+    private synchronized  void runFrequentStockManagerInteraction() throws BookStoreException {
 	// TODO: Add code for Stock Replenishment Interaction
     	
     	StockManager stockManager = configuration.getStockManager();
@@ -199,7 +199,7 @@ public class Worker implements Callable<WorkerRunResult> {
      * 
      * @throws BookStoreException
      */
-    private void runFrequentBookStoreInteraction() throws BookStoreException {
+    private synchronized void runFrequentBookStoreInteraction() throws BookStoreException {
 	// TODO: Add code for Customer Interaction
     	Random random = new Random();
    	    int numOfPicked = random.nextInt(configuration.getNumEditorPicksToGet())+1;

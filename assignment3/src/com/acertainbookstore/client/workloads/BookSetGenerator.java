@@ -12,12 +12,12 @@ import com.acertainbookstore.business.StockBook;
  */
 public class BookSetGenerator {
 
-	private int latestStockBookISBN;
+	private static int latestStockBookISBN;
 
 	//Configuration for book generation
-	private int initialCopies = 10;
-	private int titleLen = 5;
-	private int authorLen = 5;
+	private static int initialCopies = 10;
+	private static int titleLen = 5;
+	private static int authorLen = 5;
 
 	public BookSetGenerator(int latestStockBook) {
 		latestStockBookISBN = latestStockBook;
@@ -46,7 +46,7 @@ public class BookSetGenerator {
 	 * @param num
 	 * @return
 	 */
-	public Set<StockBook> nextSetOfStockBooks(int num) {
+	public static Set<StockBook> nextSetOfStockBooks(int num) {
 		HashSet<StockBook> bookSet = new HashSet<>();
 		for (int i = 0; i < num; i++) {
 			latestStockBookISBN++;
@@ -64,9 +64,9 @@ public class BookSetGenerator {
 		return bookSet;
 	}
 
-	private String chars = "abcdefghijklmnoprstuvwxyz";
+	private static String chars = "abcdefghijklmnoprstuvwxyz";
 
-	private String getRandomString(int length) {
+	private static String getRandomString(int length) {
 		char[] buf = new char[length];
 		for (int i = 0; i < length; i++) {
 		    int pick = ThreadLocalRandom.current().nextInt(chars.length());
