@@ -21,8 +21,11 @@ import com.acertainbookstore.utils.BookStoreException;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartFrame;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.LogarithmicAxis;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.data.Range;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -158,8 +161,8 @@ public class CertainWorkload {
 		dataSetLatency.addSeries(series2);
 		dataSetLatency.addSeries(seriesRPC2);
 
-		ChartFrame frameThroughPut = new ChartFrame("Perforamance", createLineChart(dataSetThroughPut,"Agg ThroughPut (succesful interactions per NanoSecs)"));
-		ChartFrame frameLatency = new ChartFrame("Perforamance", createLineChart(dataSetLatency,"Latency (millsecond)"));
+		ChartFrame frameThroughPut = new ChartFrame("Performance", createLineChart(dataSetThroughPut,"Agg ThroughPut (successful interactions per sec)"));
+		ChartFrame frameLatency = new ChartFrame("Performance", createLineChart(dataSetLatency,"Latency (millisecond)"));
 		frameThroughPut.pack();
 		frameThroughPut.setVisible(true);
 		frameLatency.pack();
@@ -167,20 +170,22 @@ public class CertainWorkload {
 	}
 	
 	private static JFreeChart createLineChart(XYSeriesCollection dataset, String str){
-		   
 		 // Right y axis for latency
-			chart = ChartFactory.createXYLineChart("Plot for Performance", "clients",
-					str, dataset, PlotOrientation.VERTICAL, true, true,
-					false);
-			
-			XYPlot plot;
-			plot = chart.getXYPlot();
-			plot.setDomainPannable(true);
-			plot.setRangePannable(true);
-			
-			chart.getLegend().setItemFont(new Font("Courier New", 12, 12));
-			
-			return chart;		
+        chart = ChartFactory.createXYLineChart("Plot for Performance", "clients",
+                str, dataset, PlotOrientation.VERTICAL, true, true,
+                false);
+
+        XYPlot plot = chart.getXYPlot();
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+
+        LogarithmicAxis yAxis = new LogarithmicAxis(str);
+        yAxis.setRange(new Range(0, 100000));
+        plot.setRangeAxis(yAxis);
+
+        chart.getLegend().setItemFont(new Font("Courier New", 12, 12));
+
+        return chart;
 	 } 
 		
 	/**
