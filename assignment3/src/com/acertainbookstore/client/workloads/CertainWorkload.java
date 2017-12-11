@@ -61,7 +61,8 @@ public class CertainWorkload {
 
 		List<List<Future<WorkerRunResult>>> allRunResult = new ArrayList<List<Future<WorkerRunResult>>>();
 		List<List<WorkerRunResult>> totalWorkersRunResults = new ArrayList<List<WorkerRunResult>>();
-
+		List<List<WorkerRunResult>> totalWorkersRunResultsRPC = new ArrayList<List<WorkerRunResult>>();
+		
 		// Initialize the RPC interfaces if its not a localTest, the variable is
 		// overriden if the property is set
 		String localTestProperty = System
@@ -69,57 +70,75 @@ public class CertainWorkload {
 		localTest = (localTestProperty != null) ? Boolean
 				.parseBoolean(localTestProperty) : localTest;
 
-		BookStore bookStore = null;
-		StockManager stockManager = null;
-		if (localTest) {
-			CertainBookStore store = new CertainBookStore();
-			bookStore = store;
-			stockManager = store;
-		} else {
-			stockManager = new StockManagerHTTPProxy(serverAddress + "/stock");
-			bookStore = new BookStoreHTTPProxy(serverAddress);
-		}
+		BookStore bookStore = null, bookStoreRPC = null;
+		StockManager stockManager = null, stockManagerRPC = null;
+		
+		CertainBookStore store = new CertainBookStore();
+		bookStore = store;
+		stockManager = store;
+		
+		stockManagerRPC = new StockManagerHTTPProxy(serverAddress + "/stock");
+		bookStoreRPC = new BookStoreHTTPProxy(serverAddress);
+		
 		stockManager.removeAllBooks();
+		stockManagerRPC.removeAllBooks();
 
 		// Generate data in the bookstore before running the workload
 		initializeBookStoreData(bookStore, stockManager);
+		initializeBookStoreData(bookStoreRPC, stockManagerRPC);
 
 		ExecutorService exec = Executors
 				.newFixedThreadPool(numConcurrentWorkloadThreads);
 
-			for (int i = 0; i < numConcurrentWorkloadThreads; i++) {
-
-				List<Future<WorkerRunResult>> runResults = new ArrayList<Future<WorkerRunResult>>();
-				List<WorkerRunResult> workerRunResults = new ArrayList<WorkerRunResult>();
+		for (int i = 0; i < numConcurrentWorkloadThreads; i++) {
+//			stockManager.removeAllBooks();
+//			initializeBookStoreData(bookStore, stockManager);
+			List<Future<WorkerRunResult>> runResults = new ArrayList<Future<WorkerRunResult>>();
+			List<WorkerRunResult> workerRunResults = new ArrayList<WorkerRunResult>();
+			
+			List<Future<WorkerRunResult>> runResultsRPC = new ArrayList<Future<WorkerRunResult>>();
+			List<WorkerRunResult> workerRunResultsRPC = new ArrayList<WorkerRunResult>();
+			
+			for (int j = 0; j <= i; j++){
+				WorkloadConfiguration config = new WorkloadConfiguration(bookStore,
+						stockManager);
+				Worker workerTask = new Worker(config);
 				
-				for (int j = 0; j <= i; j++){
-					WorkloadConfiguration config = new WorkloadConfiguration(bookStore,
-							stockManager);
-					Worker workerTask = new Worker(config);
-					
-					// Keep the futures to wait for the result from the thread
-					runResults.add(exec.submit(workerTask));
-				}
-
-		     	// Get the results from the threads using the futures returned
+				WorkloadConfiguration configRPC = new WorkloadConfiguration(bookStoreRPC,
+						stockManagerRPC);
+				Worker workerTaskRPC = new Worker(configRPC);
 				
-				for (Future<WorkerRunResult> futureRunResult : runResults) {
-					WorkerRunResult runResult = futureRunResult.get(); // blocking call
-					workerRunResults.add(runResult);
-				}
-				
-				totalWorkersRunResults.add(workerRunResults);
-				stockManager.removeAllBooks();
+				// Keep the futures to wait for the result from the thread
+				runResults.add(exec.submit(workerTask));
+				runResultsRPC.add(exec.submit(workerTaskRPC));
 			}
+			System.out.println("size"+runResults.size()+"\n");
+	     	// Get the results from the threads using the futures returned
+			
+			for (Future<WorkerRunResult> futureRunResult : runResults) {
+				WorkerRunResult runResult = futureRunResult.get(); // blocking call
+				workerRunResults.add(runResult);
+				System.out.println("success"+runResult.getSuccessfulInteractions()+"\n");
+			}
+			
+			for (Future<WorkerRunResult> futureRunResultRPC : runResultsRPC) {
+				WorkerRunResult runResultRPC = futureRunResultRPC.get(); // blocking call
+				workerRunResultsRPC.add(runResultRPC);
+				System.out.println("success"+runResultRPC.getSuccessfulInteractions()+"\n");
+			}
+			
+			totalWorkersRunResults.add(workerRunResults);
+			totalWorkersRunResultsRPC.add(workerRunResultsRPC);
+			stockManager.removeAllBooks();
+			stockManagerRPC.removeAllBooks();
+		}
 			
 			exec.shutdownNow(); // shutdown the executor
 
 		// Finished initialization, stop the clients if not localTest
-		if (!localTest) {
-			((BookStoreHTTPProxy) bookStore).stop();
-			((StockManagerHTTPProxy) stockManager).stop();
-		}
-        reportMetric(totalWorkersRunResults);
+			((BookStoreHTTPProxy) bookStoreRPC).stop();
+			((StockManagerHTTPProxy) stockManagerRPC).stop();
+	        reportMetric(totalWorkersRunResults,totalWorkersRunResultsRPC);
 	}
 
 	/**
@@ -127,7 +146,7 @@ public class CertainWorkload {
 	 * 
 	 * @param workerRunResults
 	 */
-	public static void reportMetric(List<List<WorkerRunResult>> totalWorkersRunResults) {
+	public static void reportMetric(List<List<WorkerRunResult>> totalWorkersRunResults,List<List<WorkerRunResult>> totalWorkersRunResultsRPC) {
 		// TODO: You should aggregate metrics and output them for plotting here
 
 		double averageTime = 0;
@@ -137,6 +156,9 @@ public class CertainWorkload {
 
 		XYSeries series1 = new XYSeries("ThroughPut");
 		XYSeries series2 = new XYSeries("Latency");
+		
+		XYSeries seriesRPC1 = new XYSeries("RPC ThroughPut");
+		XYSeries seriesRPC2 = new XYSeries("RPC Latency");
 		
 		for (List<WorkerRunResult> workerRunResults : totalWorkersRunResults){
 			for (WorkerRunResult runResult : workerRunResults){
@@ -152,8 +174,31 @@ public class CertainWorkload {
 			series2.add(workerRunResults.size(),Math.log(averageTime));
 
 		}
-			dataSetThroughPut.addSeries(series1);
-			dataSetLantency.addSeries(series2);
+		
+		double averageTimeRPC = 0;
+		long totalRunTimeRPC = 0;
+		float aggThroughPutRPC = 0;
+		float interactionsRPC,runTimesRPC;
+		
+		for (List<WorkerRunResult> workerRunResultsRPC : totalWorkersRunResultsRPC){
+			for (WorkerRunResult runResultRPC : workerRunResultsRPC){
+
+				interactionsRPC = runResultRPC.getSuccessfulInteractions();
+				runTimesRPC = runResultRPC.getElapsedTimeInNanoSecs();
+				aggThroughPutRPC +=  (float)interactionsRPC/runTimesRPC;
+				totalRunTimeRPC += runResultRPC.getElapsedTimeInNanoSecs();
+			}
+			averageTimeRPC = totalRunTimeRPC/workerRunResultsRPC.size();
+			
+			seriesRPC1.add(workerRunResultsRPC.size(),Math.sqrt(Math.sqrt(aggThroughPutRPC)));
+			seriesRPC2.add(workerRunResultsRPC.size(),Math.log(averageTimeRPC));
+
+		}
+		
+		dataSetThroughPut.addSeries(series1);
+		dataSetThroughPut.addSeries(seriesRPC1);
+		dataSetLantency.addSeries(series2);
+		dataSetLantency.addSeries(seriesRPC2);
 
 		ChartFrame frameThroughPut = new ChartFrame("Perforamance", createLineChart(dataSetThroughPut,"Agg ThroughPut"));
 		ChartFrame frameLatency = new ChartFrame("Perforamance", createLineChart(dataSetLantency,"Latency"));
