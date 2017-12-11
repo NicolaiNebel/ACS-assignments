@@ -161,17 +161,17 @@ public class CertainWorkload {
 		dataSetLatency.addSeries(series2);
 		dataSetLatency.addSeries(seriesRPC2);
 
-		ChartFrame frameThroughPut = new ChartFrame("Performance", createLineChart(dataSetThroughPut,"Agg ThroughPut (successful interactions per sec)"));
-		ChartFrame frameLatency = new ChartFrame("Performance", createLineChart(dataSetLatency,"Latency (second)"));
+		ChartFrame frameThroughPut = new ChartFrame("Throughput", createLineChart(dataSetThroughPut,"successful interactions per second", "Aggregate Throughput"));
+		ChartFrame frameLatency = new ChartFrame("Latency", createLineChart(dataSetLatency,"seconds", "Latency"));
 		frameThroughPut.pack();
 		frameThroughPut.setVisible(true);
 		frameLatency.pack();
 		frameLatency.setVisible(true);
 	}
 	
-	private static JFreeChart createLineChart(XYSeriesCollection dataset, String str){
+	private static JFreeChart createLineChart(XYSeriesCollection dataset, String str, String title){
 		 // Right y axis for latency
-        chart = ChartFactory.createXYLineChart("Plot for Performance", "clients",
+        chart = ChartFactory.createXYLineChart(title, "clients",
                 str, dataset, PlotOrientation.VERTICAL, true, true,
                 false);
 
@@ -180,7 +180,7 @@ public class CertainWorkload {
         plot.setRangePannable(true);
 
         LogarithmicAxis yAxis = new LogarithmicAxis(str);
-        yAxis.setRange(new Range(0, 100000));
+        yAxis.setRange(new Range(0, 125000));
         plot.setRangeAxis(yAxis);
 
         chart.getLegend().setItemFont(new Font("Courier New", 12, 12));
