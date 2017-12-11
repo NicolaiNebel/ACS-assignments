@@ -124,13 +124,13 @@ public class CertainWorkload {
 
 				interactions = runResult.getSuccessfulInteractions();
 				runTimes = runResult.getElapsedTimeInNanoSecs();
-				aggThroughPut += interactions / runTimes;
+				aggThroughPut += 1000000000*(interactions / runTimes);
 				totalRunTime += runResult.getElapsedTimeInNanoSecs();
 			}
-			double averageTime = totalRunTime/workerRunResults.size();
+			double averageTime = totalRunTime/(workerRunResults.size()*1000000000);
 			
-			series1.add(workerRunResults.size(),Math.sqrt(Math.sqrt(aggThroughPut)));
-			series2.add(workerRunResults.size(),Math.log(averageTime));
+			series1.add(workerRunResults.size(),aggThroughPut);
+			series2.add(workerRunResults.size(),averageTime);
 
 		}
 		
@@ -143,13 +143,13 @@ public class CertainWorkload {
 
 				interactionsRPC = runResultRPC.getSuccessfulInteractions();
 				runTimesRPC = runResultRPC.getElapsedTimeInNanoSecs();
-				aggThroughPutRPC += interactionsRPC/runTimesRPC;
+				aggThroughPutRPC += 1000000000*(interactionsRPC/runTimesRPC);
 				totalRunTimeRPC += runResultRPC.getElapsedTimeInNanoSecs();
 			}
-			double averageTimeRPC = totalRunTimeRPC/workerRunResultsRPC.size();
+			double averageTimeRPC = totalRunTimeRPC/(workerRunResultsRPC.size()*1000000000);
 			
-			seriesRPC1.add(workerRunResultsRPC.size(),Math.sqrt(Math.sqrt(aggThroughPutRPC)));
-			seriesRPC2.add(workerRunResultsRPC.size(),Math.log(averageTimeRPC));
+			seriesRPC1.add(workerRunResultsRPC.size(),aggThroughPutRPC);
+			seriesRPC2.add(workerRunResultsRPC.size(),averageTimeRPC);
 
 		}
 		
