@@ -92,7 +92,6 @@ public class CertainWorkload {
 			for (Future<WorkerRunResult> futureRunResult : runResults) {
 				WorkerRunResult runResult = futureRunResult.get(); // blocking call
 				workerRunResults.add(runResult);
-				System.out.println("success"+runResult.getSuccessfulInteractions()+"\n");
 			}
 
       //Add the experiment data to the results
@@ -159,8 +158,8 @@ public class CertainWorkload {
 		dataSetLatency.addSeries(series2);
 		dataSetLatency.addSeries(seriesRPC2);
 
-		ChartFrame frameThroughPut = new ChartFrame("Perforamance", createLineChart(dataSetThroughPut,"Agg ThroughPut"));
-		ChartFrame frameLatency = new ChartFrame("Perforamance", createLineChart(dataSetLatency,"Latency"));
+		ChartFrame frameThroughPut = new ChartFrame("Perforamance", createLineChart(dataSetThroughPut,"Agg ThroughPut (succesful interactions per NanoSecs)"));
+		ChartFrame frameLatency = new ChartFrame("Perforamance", createLineChart(dataSetLatency,"Latency (millsecond)"));
 		frameThroughPut.pack();
 		frameThroughPut.setVisible(true);
 		frameLatency.pack();
