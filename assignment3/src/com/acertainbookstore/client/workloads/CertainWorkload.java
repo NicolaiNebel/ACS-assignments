@@ -22,7 +22,6 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartFrame;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.LogarithmicAxis;
-import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.Range;
@@ -58,6 +57,7 @@ public class CertainWorkload {
 		StockManagerHTTPProxy managerRPC = new StockManagerHTTPProxy(serverAddress + "/stock");
 
     //Run the workers
+//		List<List<WorkerRunResult>> rpcResults = null;
     List<List<WorkerRunResult>> rpcResults = runWorkers(storeRPC, managerRPC);
 
     //Remember to stop the server again
@@ -125,13 +125,13 @@ public class CertainWorkload {
 		for (List<WorkerRunResult> workerRunResults : totalWorkersRunResults){
 			for (WorkerRunResult runResult : workerRunResults){
 
-				interactions = runResult.getSuccessfulInteractions();
+				interactions = runResult.getSuccessfulInteractions();		
 				runTimes = runResult.getElapsedTimeInNanoSecs();
-				aggThroughPut += 1000000000*(interactions / runTimes);
+				aggThroughPut += 1000000000.0*(interactions / runTimes);
 				totalRunTime += runResult.getElapsedTimeInNanoSecs();
 			}
-			double averageTime = totalRunTime/(workerRunResults.size()*1000000000);
-			
+			double averageTime = totalRunTime/(workerRunResults.size()*1000000000.0);
+
 			series1.add(workerRunResults.size(),aggThroughPut);
 			series2.add(workerRunResults.size(),averageTime);
 
@@ -146,10 +146,10 @@ public class CertainWorkload {
 
 				interactionsRPC = runResultRPC.getSuccessfulInteractions();
 				runTimesRPC = runResultRPC.getElapsedTimeInNanoSecs();
-				aggThroughPutRPC += 1000000000*(interactionsRPC/runTimesRPC);
+				aggThroughPutRPC += 1000000000.0*(interactionsRPC/runTimesRPC);
 				totalRunTimeRPC += runResultRPC.getElapsedTimeInNanoSecs();
 			}
-			double averageTimeRPC = totalRunTimeRPC/(workerRunResultsRPC.size()*1000000000);
+			double averageTimeRPC = totalRunTimeRPC/(workerRunResultsRPC.size()*1000000000.0);
 			
 			seriesRPC1.add(workerRunResultsRPC.size(),aggThroughPutRPC);
 			seriesRPC2.add(workerRunResultsRPC.size(),averageTimeRPC);
@@ -162,7 +162,7 @@ public class CertainWorkload {
 		dataSetLatency.addSeries(seriesRPC2);
 
 		ChartFrame frameThroughPut = new ChartFrame("Performance", createLineChart(dataSetThroughPut,"Agg ThroughPut (successful interactions per sec)"));
-		ChartFrame frameLatency = new ChartFrame("Performance", createLineChart(dataSetLatency,"Latency (millisecond)"));
+		ChartFrame frameLatency = new ChartFrame("Performance", createLineChart(dataSetLatency,"Latency (second)"));
 		frameThroughPut.pack();
 		frameThroughPut.setVisible(true);
 		frameLatency.pack();
