@@ -5,6 +5,8 @@ import com.acertainbookstore.interfaces.ReplicatedReadOnlyStockManager;
 import com.acertainbookstore.interfaces.Replication;
 import com.acertainbookstore.utils.BookStoreException;
 
+import java.util.Set;
+
 /**
  * {@link SlaveCertainBookStore} is a wrapper over the CertainBookStore class
  * and supports the ReplicatedReadOnlyBookStore and
@@ -30,6 +32,16 @@ public class SlaveCertainBookStore extends ReadOnlyCertainBookStore
 	 */
 	@Override
 	public synchronized ReplicationResult replicate(ReplicationRequest req) throws BookStoreException {
-		throw new BookStoreException("This method needs to be implemented.");
+		switch (req.getMessageType()) {
+			case ADDBOOKS:
+                bookStore.addBooks((Set<StockBook>) req.getDataSet());
+                break;
+			default:
+				throw new BookStoreException("Invalid message tag for replicate request");
+		}
+
+        //Update the snapshotId, return a successful ReplicationResult with no address yet!
+		snapshotId += 1;
+		return new ReplicationResult("",true);
 	}
 }

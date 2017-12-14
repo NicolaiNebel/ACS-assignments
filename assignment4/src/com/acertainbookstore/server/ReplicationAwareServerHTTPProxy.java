@@ -2,8 +2,10 @@ package com.acertainbookstore.server;
 
 import com.acertainbookstore.business.ReplicationRequest;
 import com.acertainbookstore.business.ReplicationResult;
+import com.acertainbookstore.interfaces.BookStoreSerializer;
 import com.acertainbookstore.interfaces.Replication;
-import com.acertainbookstore.utils.BookStoreException;
+import com.acertainbookstore.utils.*;
+import org.eclipse.jetty.client.HttpClient;
 
 /**
  * {@link ReplicationAwareServerHTTPProxy} implements the client side code for
@@ -12,6 +14,10 @@ import com.acertainbookstore.utils.BookStoreException;
  */
 public class ReplicationAwareServerHTTPProxy implements Replication {
 
+	private String slaveAddress = null;
+	private HttpClient client = null;
+	private static ThreadLocal<BookStoreSerializer> serializer;
+
 	/**
 	 * Instantiates a new replication aware server HTTP proxy.
 	 *
@@ -19,8 +25,18 @@ public class ReplicationAwareServerHTTPProxy implements Replication {
 	 *            the destination server address
 	 */
 	public ReplicationAwareServerHTTPProxy(String destinationServerAddress) {
-		throw new UnsupportedOperationException();
+		slaveAddress = destinationServerAddress;
+
+		// Setup the type of serializer.
+		if (BookStoreConstants.BINARY_SERIALIZATION) {
+			serializer = ThreadLocal.withInitial(BookStoreKryoSerializer::new);
+		} else {
+			serializer = ThreadLocal.withInitial(BookStoreXStreamSerializer::new);
+		}
+
+		client = new HttpClient();
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -30,7 +46,16 @@ public class ReplicationAwareServerHTTPProxy implements Replication {
 	 */
 	@Override
 	public ReplicationResult replicate(ReplicationRequest req) throws BookStoreException {
-		throw new BookStoreException("This method needs to be implemented.");
+		String urlString = slaveAddress + "/" + BookStoreMessageTag.REPLICATE;
+		BookStoreRequest bookStoreRequest = BookStoreRequest.newPostRequest(urlString, req);
+		BookStoreResponse bookStoreResponse = BookStoreUtility.performHttpExchange(client, bookStoreRequest,
+				serializer.get());
+		BookStoreResult bookStoreResult = bookStoreResponse.getResult();
+
+		ReplicationResult replicationResult = (ReplicationResult) bookStoreResult.getList().get(0);
+
+		replicationResult.setServerAddress(slaveAddress);
+		return replicationResult;
 	}
 
 	/**

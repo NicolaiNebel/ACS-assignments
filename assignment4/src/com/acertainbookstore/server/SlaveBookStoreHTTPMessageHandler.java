@@ -2,12 +2,16 @@ package com.acertainbookstore.server;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.acertainbookstore.business.ReplicationRequest;
+import com.acertainbookstore.business.ReplicationResult;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -99,6 +103,10 @@ public class SlaveBookStoreHTTPMessageHandler extends AbstractHandler {
 			case GETSTOCKBOOKSBYISBN:
 				getStockBooksByISBN(request, response);
 				break;
+
+            case REPLICATE:
+                replicate(request, response);
+                break;
 
 			default:
 				System.err.println("Unsupported message tag.");
@@ -211,6 +219,36 @@ public class SlaveBookStoreHTTPMessageHandler extends AbstractHandler {
 			bookStoreResponse.setResult(bookStoreResult);
 		} catch (BookStoreException e) {
 			bookStoreResponse.setException(e);
+		}
+
+		byte[] serializedResponseContent = serializer.get().serialize(bookStoreResponse);
+		response.getOutputStream().write(serializedResponseContent);
+	}
+
+	/**
+	 * replicate
+	 *
+	 * @param request
+	 *            the request
+	 * @param response
+	 *            the response
+	 * @return A bookstore response containing a replicate result
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
+	private void replicate(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		byte[] serializedRequestContent = getSerializedRequestContent(request);
+
+		ReplicationRequest req = (ReplicationRequest) serializer.get().deserialize(serializedRequestContent);
+		BookStoreResponse bookStoreResponse = new BookStoreResponse();
+
+		try {
+			ReplicationResult replicationResult = myBookStore.replicate(req);
+			List<ReplicationResult> list = new ArrayList<>(); list.add(replicationResult);
+			BookStoreResult bookStoreResult = new BookStoreResult(list,0);
+			bookStoreResponse.setResult(bookStoreResult);
+		} catch (BookStoreException ex) {
+			bookStoreResponse.setException(ex);
 		}
 
 		byte[] serializedResponseContent = serializer.get().serialize(bookStoreResponse);
