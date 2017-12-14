@@ -38,7 +38,7 @@ public class BookStoreTest {
 	private static final int NUM_COPIES = 5;
 
 	/** The local test. */
-	private static boolean localTest = true;
+	private static boolean localTest = false;
 
 	/** The store manager. */
 	private static StockManager storeManager;
@@ -363,8 +363,12 @@ public class BookStoreTest {
 
 		Set<Integer> validSet = new HashSet<>(); validSet.add(TEST_ISBN);
 
+		try {
+			storeManager.addBooks(invalidSet);
+		} catch (BookStoreException ex) {
+			;
+		}
 
-		storeManager.addBooks(invalidSet);
 		for (int i = 0; i < 100; i++) {
 			try {
 				client.getBooks(validSet);

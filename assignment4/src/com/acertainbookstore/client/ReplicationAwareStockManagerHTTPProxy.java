@@ -2,10 +2,7 @@ package com.acertainbookstore.client;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -51,6 +48,9 @@ public class ReplicationAwareStockManagerHTTPProxy implements StockManager {
 	/** The snapshot id. */
 	private long snapshotId = 0;
 
+	/** The random generator associated with the bookstore */
+	private Random random;
+
 	/**
 	 * Initialize the client object.
 	 *
@@ -77,6 +77,9 @@ public class ReplicationAwareStockManagerHTTPProxy implements StockManager {
 
 		// Seconds timeout; if no server reply, the request expires.
 		client.setConnectTimeout(BookStoreClientConstants.CLIENT_MAX_TIMEOUT_MILLISECS);
+
+		// Initialise the Random object
+		random = new Random();
 
 		client.start();
 	}
@@ -106,7 +109,25 @@ public class ReplicationAwareStockManagerHTTPProxy implements StockManager {
 	 * @return the replica address
 	 */
 	public String getReplicaAddress() {
-		throw new UnsupportedOperationException();
+		double master_p = 1.0/(slaveAddresses.size() + 1) - BookStoreConstants.EXP_PERCENT_WRITES;
+
+		//nextDouble returns a uniformly distributed double in the interval (0,1)
+		double p = random.nextDouble();
+
+		// If master_p < 0 this is never true
+		if (p <= master_p) {
+			return getMasterServerAddress();
+		} else {
+			return pickRandomSlave();
+		}
+	}
+
+	private String pickRandomSlave() {
+		int pick = random.nextInt(slaveAddresses.size());
+		Iterator<String> iter = slaveAddresses.iterator();
+		for (int i = 0; i < pick; i++)
+			iter.next();
+		return iter.next();
 	}
 
 	/**
