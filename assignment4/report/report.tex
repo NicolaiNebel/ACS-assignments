@@ -15,7 +15,7 @@
 \usepackage{listings}
 \usepackage{mathtools}
 \usepackage{enumitem}
-
+\usepackage[table,xcdraw]{xcolor}
 
 \usepackage{indentfirst}
 \usepackage{a4wide}
@@ -76,6 +76,65 @@ amount of time.
 
 \section{ARIES}
 
-Foo
+\begin{enumerate}
+  \item
+    Here is the dirty page table computed in the analysis phase:
 
+    \begin{center}
+      \begin{tabular}{ll}
+      \rowcolor[HTML]{C0C0C0} 
+      PageID & RecLSN \\
+      P2     & 3      \\
+      P1     & 4      \\
+      P5     & 5      \\
+      P3     & 6     
+      \end{tabular}
+    \end{center}
+
+    And here is the transaction table:
+
+    \begin{center}
+      \centering
+      \begin{tabular}{lll}
+      \rowcolor[HTML]{C0C0C0} 
+      TransID                    & Status & LastLSN \\
+      \cellcolor[HTML]{6434FC}T1 & Active & 4       \\
+      \cellcolor[HTML]{67FD9A}T2 & Active & 9      
+      \end{tabular}
+    \end{center}
+  \item
+    The set of winner transactions is ${T3}$ since it is the only one that finished.
+
+    The set of loser transactions is ${T1,T2}$ since these did not finish before the crash.
+  \item
+    The redo phase starts at the minimum \verb|recLSN| in the dirty page table. This means 
+    \verb|LSN 3|.
+
+    The undo phase ends at the oldest \verb|LSN| of the transactions in the
+    loser set. That would mean \verb|LSN 3|, since that is the first \verb|LSN|
+    associated with \verb|T1|.
+  \item
+    The set of log records that may ause pages to be rewritten during the redo phase will
+    consist of all \verb|update| or \verb|CLR| records after \verb|LSN 3|, where the redo phase starts.
+
+    This means that the set is ${3,4,5,6,8,9}$.
+  \item
+    The set of log records to undo is the set of updates of the loser transactions. That means LSNs ${9,8,5,4,3}$.
+  \item
+    This is what is appended to the log after the recovery procedure is completed
+    following a crash after \verb|LSN 10|.
+    \begin{verbatim}
+      LSN   LAST_LSN   TRAN_ID   TYPE             undoNextLSN  PAGE_ID
+      ---   --------   -------   ----             -----------  -------
+      11    9          T2        ABORT                         -
+      12    4          T1        ABORT                         -
+      13    11         T2        CLR: Undo LSN 9  8
+      14    13         T2        CLR: Undo LSN 8  5
+      15    14         T2        CLR: Undo LSN 5  -
+      16    15         T2        end
+      17    12         T1        CLR: Undo LSN 4  3
+      18    17         T1        CLR: Undo LSN 3  -
+      19    18         T1        end
+    \end{verbatim}
+\end{enumerate}
 \end{document}
