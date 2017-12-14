@@ -1,9 +1,7 @@
 package com.acertainbookstore.business;
 
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,11 +53,17 @@ public class CertainBookStoreReplicator implements Replicator {
 	 * acertainbookstore.business.ReplicationRequest)
 	 */
 	public List<Future<ReplicationResult>> replicate(ReplicationRequest request) {
-		// Implement this method, send a replicate request to all the
+		// Send a replicate request to all the
 		// activeSlaveServers use CertainBookStoreReplicationTask to create a
 		// Task, submit it to the thread pool and construct the "Future" results
 		// to be returned
-		throw new UnsupportedOperationException();
+		List<Future<ReplicationResult>> ret = new ArrayList<>();
+        for (Replication slaveReplication : replicationClients.values()) {
+            Callable<ReplicationResult> c = new CertainBookStoreReplicationTask(slaveReplication, request);
+			Future<ReplicationResult> future = replicatorThreadPool.submit(c);
+			ret.add(future);
+		}
+		return ret;
 	}
 
 	/*

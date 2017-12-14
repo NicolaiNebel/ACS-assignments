@@ -349,6 +349,60 @@ public class BookStoreTest {
 				&& booksInStorePreTest.size() == booksInStorePostTest.size());
 	}
 
+
+	/**
+	 * Tests that a failure on a write operation does not crash read functionality
+	 *
+	 * @throws BookStoreException
+	 *             the book store exception
+	 */
+	@Test
+	public void testWriteFailureCanStillRead() throws BookStoreException {
+		Set<StockBook> invalidSet = new HashSet<>();
+		invalidSet.add(new ImmutableStockBook(-1, "Foo", "Bar", 1, 1, 0, 0, 0, false));
+
+		Set<Integer> validSet = new HashSet<>(); validSet.add(TEST_ISBN);
+
+
+		storeManager.addBooks(invalidSet);
+		for (int i = 0; i < 100; i++) {
+			try {
+				client.getBooks(validSet);
+			} catch (BookStoreException ex) {
+				fail("Read fuctionality is impaired after failed write");
+			}
+		}
+	}
+
+	/**
+	 * Test that failure of a slave has no effect on operation
+	 *
+	 * @throws BookStoreException
+	 * 				the book store exception
+	 */
+	@Test
+	public void testSlaveErrorMasking() throws BookStoreException {
+		//How to make sure it is the slave failing?
+		Set<StockBook> writeSet = new HashSet<>();
+		writeSet.add(new ImmutableStockBook(4, "Foo", "Bar", 1, 1, 0, 0, 0, false));
+
+		Set<Integer> readSet = new HashSet<>(); readSet.add(TEST_ISBN);
+
+		//Here we want a call that reliably crashes the slave
+        //storeManager.crashSlave();
+
+		try {
+			storeManager.addBooks(writeSet);
+		} catch (BookStoreException e) {
+			fail("Write functionality broken by slave crash");
+		}
+		try {
+			client.getBooks(readSet);
+		} catch (BookStoreException e) {
+			fail("Read functionality broken by slave crash");
+		}
+	}
+
 	/**
 	 * Tear down after class.
 	 *
