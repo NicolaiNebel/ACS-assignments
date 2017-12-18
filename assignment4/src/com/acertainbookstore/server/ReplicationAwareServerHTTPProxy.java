@@ -2,10 +2,12 @@ package com.acertainbookstore.server;
 
 import com.acertainbookstore.business.ReplicationRequest;
 import com.acertainbookstore.business.ReplicationResult;
+import com.acertainbookstore.client.BookStoreClientConstants;
 import com.acertainbookstore.interfaces.BookStoreSerializer;
 import com.acertainbookstore.interfaces.Replication;
 import com.acertainbookstore.utils.*;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 /**
  * {@link ReplicationAwareServerHTTPProxy} implements the client side code for
@@ -35,6 +37,21 @@ public class ReplicationAwareServerHTTPProxy implements Replication {
 		}
 
 		client = new HttpClient();
+
+		// Max concurrent connections to every address.
+		client.setMaxConnectionsPerDestination(BookStoreClientConstants.CLIENT_MAX_CONNECTION_ADDRESS);
+
+		// Max number of threads.
+		client.setExecutor(new QueuedThreadPool(BookStoreClientConstants.CLIENT_MAX_THREADSPOOL_THREADS));
+
+		// Seconds timeout; if no server reply, the request expires.
+		client.setConnectTimeout(BookStoreClientConstants.CLIENT_MAX_TIMEOUT_MILLISECS);
+
+		try {
+			client.start();
+		} catch (Exception ex) {
+			;
+		}
 	}
 
 
@@ -46,7 +63,7 @@ public class ReplicationAwareServerHTTPProxy implements Replication {
 	 */
 	@Override
 	public ReplicationResult replicate(ReplicationRequest req) throws BookStoreException {
-		String urlString = slaveAddress + "/" + BookStoreMessageTag.REPLICATE;
+		String urlString = slaveAddress + BookStoreMessageTag.REPLICATE;
 		BookStoreRequest bookStoreRequest = BookStoreRequest.newPostRequest(urlString, req);
 		BookStoreResponse bookStoreResponse = BookStoreUtility.performHttpExchange(client, bookStoreRequest,
 				serializer.get());

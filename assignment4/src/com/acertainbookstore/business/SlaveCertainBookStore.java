@@ -32,12 +32,31 @@ public class SlaveCertainBookStore extends ReadOnlyCertainBookStore
 	 */
 	@Override
 	public synchronized ReplicationResult replicate(ReplicationRequest req) throws BookStoreException {
+	    if (req.getMessageType() == null) {
+	    	throw new BookStoreException("Slave received null message tag");
+		}
+
 		switch (req.getMessageType()) {
 			case ADDBOOKS:
                 bookStore.addBooks((Set<StockBook>) req.getDataSet());
                 break;
+			case REMOVEALLBOOKS:
+				bookStore.removeAllBooks();
+				break;
+			case ADDCOPIES:
+				bookStore.addCopies((Set<BookCopy>) req.getDataSet());
+				break;
+			case BUYBOOKS:
+				bookStore.buyBooks((Set<BookCopy>) req.getDataSet());
+				break;
+			case UPDATEEDITORPICKS:
+				bookStore.updateEditorPicks((Set<BookEditorPick>) req.getDataSet());
+				break;
+			case REMOVEBOOKS:
+				bookStore.removeBooks((Set<Integer>) req.getDataSet());
+				break;
 			default:
-				throw new BookStoreException("Invalid message tag for replicate request");
+				throw new BookStoreException("Invalid message tag for replicate request " + req.getMessageType());
 		}
 
         //Update the snapshotId, return a successful ReplicationResult with no address yet!
