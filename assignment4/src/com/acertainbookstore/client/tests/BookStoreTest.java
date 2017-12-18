@@ -386,24 +386,26 @@ public class BookStoreTest {
 	 */
 	@Test
 	public void testSlaveErrorMasking() throws BookStoreException {
-		//How to make sure it is the slave failing?
+		//Set the constant EXP_PERCENT_WRITES to 1 for this test
 		Set<StockBook> writeSet = new HashSet<>();
 		writeSet.add(new ImmutableStockBook(4, "Foo", "Bar", 1, 1, 0, 0, 0, false));
 
 		Set<Integer> readSet = new HashSet<>(); readSet.add(TEST_ISBN);
 
-		//Here we want a call that reliably crashes the slave
-        //storeManager.crashSlave();
+		//Invalid getEditorPicks call
+        client.getEditorPicks(-2);
 
-		try {
-			storeManager.addBooks(writeSet);
-		} catch (BookStoreException e) {
-			fail("Write functionality broken by slave crash");
-		}
-		try {
-			client.getBooks(readSet);
-		} catch (BookStoreException e) {
-			fail("Read functionality broken by slave crash");
+		for(int i = 0; i < 100; i++) {
+			try {
+				client.getBooks(readSet);
+			} catch (BookStoreException e) {
+				fail("Read functionality broken by slave crash");
+			}
+			try {
+				storeManager.addBooks(writeSet);
+			} catch (BookStoreException e) {
+				fail("Write functionality broken by slave crash");
+			}
 		}
 	}
 

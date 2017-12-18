@@ -73,7 +73,7 @@ public final class BookStoreConstants {
 	public static final float EPSILON = 0.000001F;
 
 	/** The Constant EXP_PERCENT_WRITES used for load balancing */
-	public static final double EXP_PERCENT_WRITES = 0.2F;
+	public static final double EXP_PERCENT_WRITES = 1F;
 
 	/**
 	 * Prevents the instantiation of a new {@link BookStoreConstants}.
